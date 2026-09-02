@@ -117,8 +117,33 @@
     background:var(--panel-alt);color:var(--text);
     border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;
   }
-  textarea.field{min-height:120px;resize:vertical;}
+  textarea.field{min-height:100px;resize:vertical;}
   .save-btn{max-width:220px;}
+
+  .upload-row{
+    display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;
+  }
+  .upload-label{
+    display:inline-block;width:auto;padding:9px 14px;margin:0;
+    background:var(--purple);color:#fff;font-size:12px;
+  }
+  .upload-label:hover{background:#7c3aed;color:#fff;}
+
+  .photo-grid{
+    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;
+  }
+  .photo-thumb{
+    position:relative;width:84px;height:84px;border-radius:6px;
+    overflow:hidden;border:1px solid var(--border);background:#000;
+  }
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-thumb .remove-btn{
+    position:absolute;top:2px;right:2px;width:20px;height:20px;
+    border-radius:50%;background:rgba(0,0,0,.65);color:#fecaca;
+    font-size:12px;line-height:20px;text-align:center;cursor:pointer;
+    font-weight:700;
+  }
+  .photo-thumb .remove-btn:hover{background:#ef4444;color:#fff;}
 </style>
 </head>
 <body>
@@ -166,6 +191,7 @@
     let geojson = null;
     let selectedIndex = null;
     let searchTerm = "";
+    let currentPhotos = [];
 
     const autoLoadBtn = document.getElementById("autoLoadBtn");
     const fileInput = document.getElementById("fileInput");
@@ -293,6 +319,17 @@
       });
     }
 
+    // currentPhotos: array de objetos {title, web_url, url, scaled_url?}
+    function getPhotosArray(properties) {
+      if (!Array.isArray(properties.photos)) return [];
+      return properties.photos.map(photo => {
+        if (typeof photo === "string") {
+          return { title: "", web_url: photo, url: photo };
+        }
+        return { ...photo };
+      }).filter(photo => photo.web_url || photo.url || photo.scaled_url);
+    }
+
     function renderEditor() {
       if (selectedIndex === null || !geojson) {
         editorBox.innerHTML = "<h2>Selecciona un elemento</h2>";
@@ -303,6 +340,8 @@
       const p = feature.properties || {};
       feature.properties = p;
 
+      currentPhotos = getPhotosArray(p);
+
       editorBox.innerHTML = `
         <h2>Editar elemento</h2>
 
@@ -312,11 +351,48 @@
         <label class="field-label">Descripción</label>
         <textarea class="field" id="descriptionInput">${escapeHtml(getDescription(feature))}</textarea>
 
-        <label class="field-label">Fotos, una URL por línea</label>
-        <textarea class="field" id="photosInput">${escapeHtml(getPhotosText(p))}</textarea>
+        <label class="field-label">Fotos</label>
+        <div class="upload-row">
+          <label class="file-label upload-label" for="photoUploadInput">Subir fotos desde el dispositivo</label>
+          <input id="photoUploadInput" type="file" accept="image/*" multiple>
+        </div>
+        <div class="photo-grid" id="photoGrid"></div>
+
+        <label class="field-label">O agrega URLs de fotos, una por línea</label>
+        <textarea class="field" id="photosInput" placeholder="https://ejemplo.com/foto.jpg"></textarea>
 
         <button class="save-btn" id="saveBtn">Aplicar cambios</button>
       `;
+
+      renderPhotoGrid();
+
+      document.getElementById("photoUploadInput").addEventListener("change", function (e) {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        let pending = files.length;
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = function () {
+            currentPhotos.push({
+              title: file.name,
+              web_url: reader.result,
+              url: reader.result
+            });
+            pending -= 1;
+            if (pending === 0) {
+              renderPhotoGrid();
+            }
+          };
+          reader.onerror = function () {
+            showError("No se pudo leer la imagen: " + file.name);
+            pending -= 1;
+          };
+          reader.readAsDataURL(file);
+        });
+
+        e.target.value = "";
+      });
 
       document.getElementById("saveBtn").addEventListener("click", function () {
         const title = document.getElementById("titleInput").value;
@@ -329,48 +405,52 @@
         p.notes = description;
         if (p.desc !== undefined) p.desc = description;
 
-        const photoUrls = photosText
+        const urlPhotos = photosText
           .split("\n")
           .map(url => url.trim())
-          .filter(url => url.length > 0);
+          .filter(url => url.length > 0)
+          .map(url => ({ title: title, web_url: url, url: url }));
 
-        const existingByUrl = {};
-        if (Array.isArray(p.photos)) {
-          p.photos.forEach(photo => {
-            if (photo && typeof photo === "object") {
-              const key = photo.web_url || photo.url || photo.scaled_url;
-              if (key) existingByUrl[key] = photo;
-            }
-          });
-        }
+        const uploadedPhotos = currentPhotos.map(photo => ({
+          ...photo,
+          title: photo.title || title
+        }));
 
-        p.photos = photoUrls.map(url => {
-          const existing = existingByUrl[url] || {};
-          return {
-            ...existing,
-            title: title,
-            web_url: url,
-            url: url
-          };
-        });
+        p.photos = [...uploadedPhotos, ...urlPhotos];
 
         updateStats();
         renderList();
         showSuccess("Cambios aplicados. Ahora puedes descargar el GeoJSON actualizado.");
+        renderEditor();
       });
     }
 
-    function getPhotosText(properties) {
-      if (!properties.photos) return "";
+    function renderPhotoGrid() {
+      const grid = document.getElementById("photoGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
 
-      if (Array.isArray(properties.photos)) {
-        return properties.photos.map(photo => {
-          if (typeof photo === "string") return photo;
-          return photo.web_url || photo.url || photo.scaled_url || "";
-        }).filter(Boolean).join("\n");
-      }
+      currentPhotos.forEach((photo, i) => {
+        const src = photo.web_url || photo.url || photo.scaled_url || "";
+        const thumb = document.createElement("div");
+        thumb.className = "photo-thumb";
 
-      return "";
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = photo.title || "foto";
+
+        const removeBtn = document.createElement("div");
+        removeBtn.className = "remove-btn";
+        removeBtn.textContent = "×";
+        removeBtn.addEventListener("click", function () {
+          currentPhotos.splice(i, 1);
+          renderPhotoGrid();
+        });
+
+        thumb.appendChild(img);
+        thumb.appendChild(removeBtn);
+        grid.appendChild(thumb);
+      });
     }
 
     function escapeHtml(value) {
