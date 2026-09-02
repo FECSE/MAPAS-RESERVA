@@ -1,143 +1,158 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editor GeoJSON</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor GeoJSON Reserva</title>
+<style>
+  :root{
+    --bg:#0a0f18;
+    --panel:#0d1420;
+    --panel-alt:#0b1017;
+    --border:rgba(148,163,184,0.15);
+    --text:#e5edf7;
+    --text-dim:#8ea0b5;
+    --green:#22c55e;
+    --purple:#8b5cf6;
+    --teal:#06b6d4;
+    --blue:#3b82f6;
+    --orange:#f59e0b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 24px;
+    background:var(--panel-alt);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-icon{
+    width:32px;height:32px;border-radius:8px;
+    background:linear-gradient(135deg,var(--green),#0f9f4d);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+  }
+  .brand-text .label{
+    font-size:11px;letter-spacing:.08em;color:var(--green);
+    font-weight:700;text-transform:uppercase;
+  }
+  .brand-text h1{margin:2px 0 0;font-size:17px;color:#fff;}
+  .stats{display:flex;gap:28px;}
+  .stat{text-align:center;}
+  .stat .num{font-size:18px;font-weight:700;color:#fff;}
+  .stat .cap{font-size:10px;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;}
+  .editor-tag{color:var(--purple);font-weight:700;font-size:13px;}
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0b1118;
-      color: #e5edf7;
-    }
+  main{
+    display:grid;
+    grid-template-columns:320px 1fr;
+    height:calc(100vh - 65px);
+  }
+  aside{
+    border-right:1px solid var(--border);
+    overflow-y:auto;
+    background:var(--panel);
+    display:flex;flex-direction:column;
+  }
+  .side-top{padding:16px;border-bottom:1px solid var(--border);}
+  .side-top p{color:var(--text-dim);font-size:12px;margin:4px 0 14px;}
 
-    header {
-      padding: 16px;
-      background: #101720;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-    }
+  button, label.file-label{
+    display:block;width:100%;padding:11px;margin:8px 0;
+    background:var(--green);color:#04110a;border:none;cursor:pointer;
+    font-weight:700;text-align:center;border-radius:6px;font-size:13px;
+    transition:background .15s, color .15s;
+  }
+  button:hover, label.file-label:hover{background:#0f9f4d;color:#fff;}
+  button:disabled{opacity:.4;cursor:not-allowed;}
+  input[type="file"]{display:none;}
 
-    h1 {
-      margin: 0;
-      font-size: 20px;
-    }
+  .search{
+    width:100%;padding:10px 12px;background:var(--panel-alt);
+    border:1px solid var(--border);border-radius:6px;color:var(--text);
+    font-size:13px;margin-top:4px;
+  }
 
-    main {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      height: calc(100vh - 65px);
-    }
+  .status{padding:12px 16px;color:var(--text-dim);font-size:13px;}
+  .error{margin:0 16px;padding:10px 12px;border-radius:6px;color:#fecaca;background:rgba(239,68,68,.12);display:none;font-size:13px;}
+  .success{margin:0 16px 10px;padding:10px 12px;border-radius:6px;color:#bbf7d0;background:rgba(34,197,94,.12);display:none;font-size:13px;}
 
-    aside {
-      border-right: 1px solid rgba(148, 163, 184, 0.25);
-      overflow-y: auto;
-      background: #070b10;
-    }
+  .list-header{
+    padding:12px 16px 0;font-size:11px;color:var(--text-dim);
+    text-transform:uppercase;letter-spacing:.06em;
+  }
+  #list{flex:1;overflow-y:auto;}
+  .item{
+    display:flex;align-items:center;gap:10px;
+    padding:12px 16px;border-bottom:1px solid var(--border);
+    cursor:pointer;
+  }
+  .item:hover{background:#141c26;}
+  .item.active{background:#182230;border-left:4px solid var(--green);padding-left:12px;}
+  .badge{
+    width:26px;height:26px;border-radius:6px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;
+  }
+  .item-info .title{font-size:13px;font-weight:600;color:#fff;}
+  .item-info .meta{font-size:11px;color:var(--text-dim);margin-top:2px;}
 
-    section {
-      padding: 20px;
-      overflow-y: auto;
-    }
+  section{padding:24px;overflow-y:auto;background:var(--bg);}
+  section h2{margin-top:0;font-size:18px;color:#fff;}
+  section p{color:var(--text-dim);font-size:13px;}
 
-    button,
-    label {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      background: #18c964;
-      color: #04110a;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      text-align: center;
-      box-sizing: border-box;
-    }
-
-    button:hover,
-    label:hover {
-      background: #0f9f4d;
-      color: white;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .item {
-      padding: 12px;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-      cursor: pointer;
-    }
-
-    .item:hover {
-      background: #141c26;
-    }
-
-    .item.active {
-      background: #182230;
-      border-left: 4px solid #18c964;
-    }
-
-    input,
-    textarea {
-      width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 14px;
-      padding: 10px;
-      background: #101720;
-      color: #e5edf7;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-    }
-
-    textarea {
-      min-height: 140px;
-    }
-
-    .status {
-      padding: 12px;
-      color: #8ea0b5;
-      font-size: 14px;
-    }
-
-    .error {
-      color: #fecaca;
-      padding: 12px;
-      background: rgba(239, 68, 68, 0.12);
-      display: none;
-    }
-
-    .success {
-      color: #bbf7d0;
-      padding: 12px;
-      background: rgba(24, 201, 100, 0.12);
-      display: none;
-    }
-  </style>
+  .field-label{
+    display:block;font-size:12px;color:var(--text-dim);
+    margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;
+  }
+  input.field, textarea.field{
+    width:100%;box-sizing:border-box;margin-bottom:16px;padding:10px 12px;
+    background:var(--panel-alt);color:var(--text);
+    border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;
+  }
+  textarea.field{min-height:120px;resize:vertical;}
+  .save-btn{max-width:220px;}
+</style>
 </head>
-
 <body>
   <header>
-    <h1>Editor GeoJSON Reserva</h1>
+    <div class="brand">
+      <div class="brand-icon">🌿</div>
+      <div class="brand-text">
+        <div class="label">Reserva Natural</div>
+        <h1>Editor de Rutas y Transectos</h1>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="num" id="statTotal">0</div><div class="cap">Elementos</div></div>
+      <div class="stat"><div class="num" id="statVisible">0</div><div class="cap">Editables</div></div>
+      <div class="stat"><div class="num" id="statPhotos">0</div><div class="cap">Fotos</div></div>
+    </div>
+    <div class="editor-tag">✏ Editor</div>
   </header>
 
   <main>
     <aside>
-      <div style="padding: 12px;">
-        <button id="autoLoadBtn">Cargar rutas-reserva.geojson automático</button>
-
-        <label for="fileInput">Cargar archivo manual</label>
+      <div class="side-top">
+        <button id="autoLoadBtn">Cargar rutas-reserva.geojson</button>
+        <label class="file-label" for="fileInput">Cargar archivo manual</label>
         <input id="fileInput" type="file" accept=".geojson,.json">
-
         <button id="downloadBtn" disabled>Descargar actualizado</button>
-
-        <div id="status" class="status">Esperando archivo...</div>
-        <div id="error" class="error"></div>
-        <div id="success" class="success"></div>
+        <input class="search" id="searchInput" placeholder="Buscar ruta o punto...">
       </div>
 
+      <div id="status" class="status">Esperando archivo...</div>
+      <div id="error" class="error"></div>
+      <div id="success" class="success"></div>
+
+      <div class="list-header">Senderos</div>
       <div id="list"></div>
     </aside>
 
@@ -150,6 +165,7 @@
   <script>
     let geojson = null;
     let selectedIndex = null;
+    let searchTerm = "";
 
     const autoLoadBtn = document.getElementById("autoLoadBtn");
     const fileInput = document.getElementById("fileInput");
@@ -159,6 +175,13 @@
     const successBox = document.getElementById("success");
     const listBox = document.getElementById("list");
     const editorBox = document.getElementById("editor");
+    const searchInput = document.getElementById("searchInput");
+
+    const statTotal = document.getElementById("statTotal");
+    const statVisible = document.getElementById("statVisible");
+    const statPhotos = document.getElementById("statPhotos");
+
+    const BADGE_COLORS = ["#22c55e", "#8b5cf6", "#06b6d4", "#3b82f6", "#f59e0b"];
 
     function showError(message) {
       errorBox.style.display = "block";
@@ -188,6 +211,25 @@
       return text.includes("cámara") || text.includes("camara") || text.includes("camera");
     }
 
+    function getPhotoCount(feature) {
+      const p = feature.properties || {};
+      return Array.isArray(p.photos) ? p.photos.length : 0;
+    }
+
+    function updateStats() {
+      if (!geojson) {
+        statTotal.textContent = "0";
+        statVisible.textContent = "0";
+        statPhotos.textContent = "0";
+        return;
+      }
+      const editable = geojson.features.filter(f => !isCamera(f));
+      const totalPhotos = geojson.features.reduce((sum, f) => sum + getPhotoCount(f), 0);
+      statTotal.textContent = geojson.features.length;
+      statVisible.textContent = editable.length;
+      statPhotos.textContent = totalPhotos;
+    }
+
     function loadGeoJSON(data) {
       if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
         showError("El archivo no parece ser un GeoJSON FeatureCollection válido.");
@@ -202,6 +244,7 @@
       statusBox.textContent = "GeoJSON cargado. Elementos totales: " + geojson.features.length + ". Elementos visibles/editables: " + editable.length + ".";
       downloadBtn.disabled = false;
 
+      updateStats();
       renderList();
       showSuccess("Archivo cargado correctamente.");
     }
@@ -214,9 +257,31 @@
       geojson.features.forEach((feature, index) => {
         if (isCamera(feature)) return;
 
+        const title = getTitle(feature);
+        if (searchTerm && !title.toLowerCase().includes(searchTerm)) return;
+
         const item = document.createElement("div");
         item.className = "item" + (index === selectedIndex ? " active" : "");
-        item.textContent = getTitle(feature);
+
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        badge.style.background = BADGE_COLORS[index % BADGE_COLORS.length];
+        badge.textContent = "⛰";
+
+        const info = document.createElement("div");
+        info.className = "item-info";
+        const titleEl = document.createElement("div");
+        titleEl.className = "title";
+        titleEl.textContent = title;
+        const metaEl = document.createElement("div");
+        metaEl.className = "meta";
+        const photoCount = getPhotoCount(feature);
+        metaEl.textContent = "Ruta / Transecto" + (photoCount ? " · " + photoCount + " fotos" : "");
+        info.appendChild(titleEl);
+        info.appendChild(metaEl);
+
+        item.appendChild(badge);
+        item.appendChild(info);
 
         item.addEventListener("click", function () {
           selectedIndex = index;
@@ -241,16 +306,16 @@
       editorBox.innerHTML = `
         <h2>Editar elemento</h2>
 
-        <label>Título</label>
-        <input id="titleInput" value="${escapeHtml(getTitle(feature))}">
+        <label class="field-label">Título</label>
+        <input class="field" id="titleInput" value="${escapeHtml(getTitle(feature))}">
 
-        <label>Descripción</label>
-        <textarea id="descriptionInput">${escapeHtml(getDescription(feature))}</textarea>
+        <label class="field-label">Descripción</label>
+        <textarea class="field" id="descriptionInput">${escapeHtml(getDescription(feature))}</textarea>
 
-        <label>Fotos, una URL por línea</label>
-        <textarea id="photosInput">${escapeHtml(getPhotosText(p))}</textarea>
+        <label class="field-label">Fotos, una URL por línea</label>
+        <textarea class="field" id="photosInput">${escapeHtml(getPhotosText(p))}</textarea>
 
-        <button id="saveBtn">Aplicar cambios</button>
+        <button class="save-btn" id="saveBtn">Aplicar cambios</button>
       `;
 
       document.getElementById("saveBtn").addEventListener("click", function () {
@@ -262,18 +327,34 @@
         p.name = title;
         p.description = description;
         p.notes = description;
+        if (p.desc !== undefined) p.desc = description;
 
         const photoUrls = photosText
-          .split("\\n")
+          .split("\n")
           .map(url => url.trim())
           .filter(url => url.length > 0);
 
-        p.photos = photoUrls.map(url => ({
-          title: title,
-          web_url: url,
-          url: url
-        }));
+        const existingByUrl = {};
+        if (Array.isArray(p.photos)) {
+          p.photos.forEach(photo => {
+            if (photo && typeof photo === "object") {
+              const key = photo.web_url || photo.url || photo.scaled_url;
+              if (key) existingByUrl[key] = photo;
+            }
+          });
+        }
 
+        p.photos = photoUrls.map(url => {
+          const existing = existingByUrl[url] || {};
+          return {
+            ...existing,
+            title: title,
+            web_url: url,
+            url: url
+          };
+        });
+
+        updateStats();
         renderList();
         showSuccess("Cambios aplicados. Ahora puedes descargar el GeoJSON actualizado.");
       });
@@ -286,7 +367,7 @@
         return properties.photos.map(photo => {
           if (typeof photo === "string") return photo;
           return photo.web_url || photo.url || photo.scaled_url || "";
-        }).filter(Boolean).join("\\n");
+        }).filter(Boolean).join("\n");
       }
 
       return "";
@@ -341,6 +422,11 @@
       };
 
       reader.readAsText(file);
+    });
+
+    searchInput.addEventListener("input", function () {
+      searchTerm = searchInput.value.trim().toLowerCase();
+      renderList();
     });
 
     downloadBtn.addEventListener("click", function () {
