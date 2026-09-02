@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor GeoJSON Reserva</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg-950: #070b10;
+      --bg-925: #0b1118;
+      --bg-900: #101720;
+      --bg-850: #141c26;
+      --bg-800: #182230;
+      --line: rgba(148, 163, 184, 0.18);
+      --line-strong: rgba(148, 163, 184, 0.34);
+      --text: #e5edf7;
+      --muted: #8ea0b5;
+      --muted-2: #65758a;
+      --green: #18c964;
+      --green-dark: #0f9f4d;
+      --cyan: #06b6d4;
+      --red: #ef4444;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      min-height: 100%;
+      margin: 0;
+      font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg-950);
+      color: var(--text);
+    }
+
+    body { overflow: hidden; }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 64px 1fr;
+      background: var(--bg-950);
+    }
+
+    .topbar {
+      background: var(--bg-900);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 260px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      color: var(--green);
+      background: var(--bg-850);
+      border: 1px solid var(--line-strong);
+    }
+
+    .brand p {
+      margin: 0 0 5px;
+      color: var(--green);
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      line-height: 1;
+    }
+
+    .brand h1 {
+      margin: 0;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 800;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .button, .file-label {
+      appearance: none;
+      border: 1px solid var(--line-strong);
+      background: var(--bg-850);
+      color: var(--text);
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border-radius: 3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .button.primary, .file-label.primary {
+      background: var(--green);
+      border-color: var(--green);
+      color: #04110a;
+    }
+
+    .button:hover, .file-label:hover { background: var(--bg-800); }
+    .button.primary:hover, .file-label.primary:hover { background: var(--green-dark); border-color: var(--green-dark); color: #ffffff; }
+    .button:focus-visible, .file-label:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+    input[type="file"] { display: none; }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+    }
+
+    .sidebar {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      background: var(--bg-925);
+      border-right: 1px solid var(--line);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--line);
+      background: var(--bg-900);
+    }
+
+    .summary div {
+      padding: 13px 10px;
+      border-right: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .summary div:last-child { border-right: 0; }
+    .summary strong { display: block; color: #60a5fa; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .summary span { display: block; margin-top: 5px; color: var(--muted-2); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.11em; }
+
+    .filters {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      gap: 10px;
+    }
+
+    .search {
+      position: relative;
+    }
+
+    .search i {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-2);
+      font-size: 11px;
+    }
+
+    .input, .textarea, .select {
+      width: 100%;
+      border: 1px solid var(--line-strong);
+      background: var(--bg-850);
+      color: var(--text);
+      padding: 10px 11px;
+      font-family: inherit;
+      font-size: 12px;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .search .input { padding-left: 31px; }
+    .textarea { min-height: 98px; resize: vertical; line-height: 1.45; }
+    .input::placeholder, .textarea::placeholder { color: var(--muted-2); }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--line-strong);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .segment {
+      border: 0;
+      border-right: 1px solid var(--line-strong);
+      background: var(--bg-925);
+      color: var(--muted);
+      padding: 9px 6px;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+    }
+
+    .segment:last-child { border-right: 0; }
+    .segment.active { background: var(--green); color: #04110a; }
+
+    .list {
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .row {
+      width: 100%;
+      display: block;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      padding: 13px 14px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .row:hover, .row.active { background: var(--bg-850); }
+    .row-title { display: flex; justify-content: space-between; gap: 10px; color: var(--text); font-size: 12px; font-weight: 800; line-height: 1.25; }
+    .chip { flex: 0 0 auto; color: #04110a; background: var(--green); padding: 3px 5px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; border-radius: 2px; }
+    .chip.point { background: var(--cyan); color: #021014; }
+    .chip.hidden { background: var(--red); color: white; }
+    .row-meta { margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+
+    .editor {
+      min-height: 0;
+      overflow: auto;
+      background: #0a0f16;
+    }
+
+    .panel {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    .empty {
+      min-height: calc(100vh - 64px);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 28px;
+    }
+
+    .empty-inner {
+      max-width: 560px;
+      border: 1px solid var(--line);
+      background: var(--bg-900);
+      padding: 28px;
+      border-radius: 3px;
+    }
+
+    .empty h2, .section h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-wrap: balance;
+    }
+
+    .empty p, .section-intro {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+
+    .section {
+      border: 1px solid var(--line);
+      background: var(--bg-900);
+      border-radius: 3px;
+    }
+
+    .section-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    .section-body {
+      padding: 20px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+    .label { display: block; margin-bottom: 7px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.11em; }
+    .hint { margin-top: 6px; color: var(--muted-2); font-size: 11px; line-height: 1.4; }
+
+    .photo-list {
+      border: 1px solid var(--line);
+      border-radius: 3px;
+    }
+
+    .photo-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      align-items: start;
+    }
+
+    .photo-row:last-child { border-bottom: 0; }
+    .small-button { border: 1px solid var(--line-strong); background: var(--bg-850); color: var(--text); font-family: inherit; font-size: 10px; font-weight: 800; padding: 10px; cursor: pointer; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .small-button.danger { color: #fecaca; border-color: rgba(239,68,68,.42); }
+
+    .notice {
+      margin-top: 14px;
+      border-left: 3px solid var(--green);
+      padding: 12px 14px;
+      background: var(--bg-850);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      background: var(--green);
+      color: #04110a;
+      padding: 11px 13px;
+      font-size: 12px;
+      font-weight: 800;
+      border-radius: 3px;
+      display: none;
+      z-index: 50;
+    }
+
+    .toast.show { display: block; }
+
+    @media (max-width: 920px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; grid-template-rows: auto 1fr; }
+      .topbar { min-height: 64px; flex-direction: column; align-items: stretch; padding: 14px; }
+      .actions { justify-content: stretch; }
+      .button, .file-label { justify-content: center; flex: 1; }
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { max-height: 54vh; border-right: 0; border-bottom: 1px solid var(--line); }
+      .panel { padding: 18px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .section-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true"><i class="fa-solid fa-pen-to-square"></i></div>
+        <div>
+          <p>Editor de datos</p>
+          <h1>Reserva Natural · GeoJSON</h1>
+        </div>
+      </div>
+      <div class="actions">
+        <label class="file-label primary" for="file-input"><i class="fa-solid fa-folder-open"></i>Cargar GeoJSON</label>
+        <input id="file-input" type="file" accept=".geojson,.json,application/geo+json,application/json" />
+        <button class="button" id="download-btn" type="button"><i class="fa-solid fa-download"></i>Descargar actualizado</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <section class="summary" aria-label="Resumen">
+          <div><strong id="stat-trails">0</strong><span>Rutas</span></div>
+          <div><strong id="stat-points">0</strong><span>Puntos</span></div>
+          <div><strong id="stat-photos">0</strong><span>Fotos</span></div>
+        </section>
+        <section class="filters">
+          <div class="search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input class="input" id="search-input" type="search" placeholder="Buscar por título o descripción..." />
+          </div>
+          <div class="segmented" role="tablist" aria-label="Filtro de elementos">
+            <button class="segment active" type="button" data-filter="all">Todo</button>
+            <button class="segment" type="button" data-filter="trail">Rutas</button>
+            <button class="segment" type="button" data-filter="point">Puntos</button>
+          </div>
+        </section>
+        <section class="list" id="item-list" aria-live="polite"></section>
+      </aside>
+
+      <section class="editor" id="editor-area">
+        <div class="empty">
+          <div class="empty-inner">
+            <h2>Carga tu archivo rutas-reserva.geojson para empezar a editar.</h2>
+            <p>Este editor cambia títulos, descripciones, colores, elevaciones y URLs de fotos. Al terminar, descarga el GeoJSON actualizado y súbelo a GitHub reemplazando el anterior.</p>
+            <div class="notice">No modifica coordenadas ni geometrías de senderos, así evitas dañar las rutas originales.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast">Cambios guardados en memoria</div>
+
+  <script>
+    let geoJsonData = null;
+    let items = [];
+    let selectedId = null;
+    let activeFilter = "all";
+
+    const CAMERA_WORDS = ["cámara", "camara", "camera"];
+
+    const fileInput = document.getElementById("file-input");
+    const itemList = document.getElementById("item-list");
+    const editorArea = document.getElementById("editor-area");
+    const searchInput = document.getElementById("search-input");
+    const downloadBtn = document.getElementById("download-btn");
+    const toast = document.getElementById("toast");
+
+    fileInput.addEventListener("change", handleFileLoad);
+    searchInput.addEventListener("input", renderList);
+    downloadBtn.addEventListener("click", downloadGeoJson);
+
+    document.querySelectorAll(".segment").forEach(function(button) {
+      button.addEventListener("click", function() {
+        activeFilter = button.dataset.filter;
+        document.querySelectorAll(".segment").forEach(function(item) { item.classList.remove("active"); });
+        button.classList.add("active");
+        renderList();
+      });
+    });
+
+    document.addEventListener("keydown", function(event) {
+      if (event.key === "Escape") {
+        selectedId = null;
+        renderList();
+        renderEditor();
+      }
+    });
+
+    function handleFileLoad(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          geoJsonData = JSON.parse(e.target.result);
+          if (!geoJsonData || !Array.isArray(geoJsonData.features)) {
+            throw new Error("El archivo no tiene una estructura FeatureCollection válida.");
+          }
+          rebuildItems();
+          selectedId = items[0] ? items[0].id : null;
+          renderStats();
+          renderList();
+          renderEditor();
+          showToast("GeoJSON cargado correctamente");
+        } catch (error) {
+          alert("No se pudo leer el GeoJSON: " + error.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function rebuildItems() {
+      items = [];
+      if (!geoJsonData || !Array.isArray(geoJsonData.features)) return;
+
+      geoJsonData.features.forEach(function(feature, featureIndex) {
+        const props = feature.properties || (feature.properties = {});
+        const geometry = feature.geometry || {};
+        const title = getTitle(props);
+        const isTrail = geometry.type === "LineString" || geometry.type === "MultiLineString";
+        const isPoint = geometry.type === "Point";
+
+        if (isTrail || isPoint) {
+          items.push({
+            id: "feature-" + featureIndex,
+            type: isTrail ? "trail" : "point",
+            featureIndex: featureIndex,
+            photoIndex: null,
+            title: title,
+            notes: props.notes || props.description || "",
+            hidden: props.deleted === true,
+            camera: isCameraText(title),
+            photoCount: Array.isArray(props.photos) ? props.photos.filter(function(photo) { return photo.deleted !== true; }).length : 0
+          });
+        }
+
+        if (Array.isArray(props.photos)) {
+          props.photos.forEach(function(photo, photoIndex) {
+            if (!photo) return;
+            const photoTitle = photo.title || title;
+            items.push({
+              id: "photo-" + featureIndex + "-" + photoIndex,
+              type: "point",
+              featureIndex: featureIndex,
+              photoIndex: photoIndex,
+              title: photoTitle,
+              notes: photo.notes || "",
+              hidden: photo.deleted === true,
+              camera: isCameraText(photoTitle),
+              photoCount: getPhotoUrl(photo) ? 1 : 0
+            });
+          });
+        }
+      });
+    }
+
+    function renderStats() {
+      const trails = items.filter(function(item) { return item.type === "trail" && !item.hidden && !item.camera; }).length;
+      const points = items.filter(function(item) { return item.type === "point" && !item.hidden && !item.camera; }).length;
+      const photos = items.reduce(function(total, item) { return item.hidden || item.camera ? total : total + item.photoCount; }, 0);
+
+      document.getElementById("stat-trails").textContent = trails;
+      document.getElementById("stat-points").textContent = points;
+      document.getElementById("stat-photos").textContent = photos;
+    }
+
+    function renderList() {
+      const query = searchInput.value.trim().toLowerCase();
+      const filtered = items.filter(function(item) {
+        const matchesFilter = activeFilter === "all" || item.type === activeFilter;
+        const matchesSearch = !query || item.title.toLowerCase().includes(query) || String(item.notes || "").toLowerCase().includes(query);
+        return matchesFilter && matchesSearch;
+      });
+
+      if (!geoJsonData) {
+        itemList.innerHTML = '<div class="empty-state" style="padding:18px 14px;color:var(--muted);font-size:12px;line-height:1.5;">Carga un GeoJSON para ver los elementos editables.</div>';
+        return;
+      }
+
+      if (!filtered.length) {
+        itemList.innerHTML = '<div class="empty-state" style="padding:18px 14px;color:var(--muted);font-size:12px;line-height:1.5;">No hay resultados para esta búsqueda.</div>';
+        return;
+      }
+
+      itemList.innerHTML = "";
+      filtered.forEach(function(item) {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "row" + (item.id === selectedId ? " active" : "");
+        row.innerHTML = '<div class="row-title"><span>' + escapeHtml(item.title) + '</span>' + buildChip(item) + '</div><div class="row-meta">' + buildMeta(item) + '</div>';
+        row.addEventListener("click", function() {
+          selectedId = item.id;
+          renderList();
+          renderEditor();
+        });
+        itemList.appendChild(row);
+      });
+    }
+
+    function buildChip(item) {
+      if (item.hidden) return '<span class="chip hidden">Oculto</span>';
+      if (item.type === "trail") return '<span class="chip">Ruta</span>';
+      return '<span class="chip point">Punto</span>';
+    }
+
+    function buildMeta(item) {
+      const parts = [];
+      if (item.camera) parts.push("Cámara: excluida del mapa");
+      if (item.photoCount) parts.push(item.photoCount + " foto(s)");
+      if (item.notes) parts.push(trimText(item.notes, 52));
+      return parts.length ? escapeHtml(parts.join(" · ")) : "Sin descripción";
+    }
+
+    function renderEditor() {
+      if (!geoJsonData) return;
+
+      const item = items.find(function(current) { return current.id === selectedId; });
+      if (!item) {
+        editorArea.innerHTML = '<div class="empty"><div class="empty-inner"><h2>Selecciona un elemento de la lista.</h2><p>Usa el panel izquierdo para elegir una ruta, transecto o punto de interés.</p></div></div>';
+        return;
+      }
+
+      const target = getTarget(item);
+      const data = target.data;
+      const parentProps = geoJsonData.features[item.featureIndex].properties || {};
+      const title = item.photoIndex === null ? getTitle(data) : (data.title || getTitle(parentProps));
+      const notes = data.notes || data.description || "";
+      const color = data.hexcolor || data.marker_color || "#18c964";
+      const elevation = data.elevation || "";
+      const deleted = data.deleted === true;
+      const photoRows = buildPhotoEditorRows(item, data);
+
+      editorArea.innerHTML = '<div class="panel"><section class="section"><div class="section-header"><div><h2>Editar ' + (item.type === "trail" ? "ruta / transecto" : "punto de interés") + '</h2><p class="section-intro">Los cambios quedan en memoria hasta que descargues el archivo GeoJSON actualizado.</p></div><button class="button" id="toggle-hidden-btn" type="button">' + (deleted ? 'Mostrar elemento' : 'Ocultar elemento') + '</button></div><div class="section-body"><div class="form-grid"><label class="field full"><span class="label">Título</span><input class="input" id="field-title" value="' + escapeAttribute(title) + '" /></label><label class="field full"><span class="label">Descripción / notas</span><textarea class="textarea" id="field-notes">' + escapeHtml(notes) + '</textarea></label>' + (item.type === "trail" ? '<label class="field"><span class="label">Color de ruta</span><input class="input" id="field-color" type="color" value="' + escapeAttribute(normalizeColor(color)) + '" /></label>' : '<label class="field"><span class="label">Elevación</span><input class="input" id="field-elevation" type="number" value="' + escapeAttribute(elevation) + '" placeholder="Ej. 1850" /></label>') + '<div class="field"><span class="label">Estado</span><select class="select" id="field-deleted"><option value="false"' + (!deleted ? ' selected' : '') + '>Visible en el mapa</option><option value="true"' + (deleted ? ' selected' : '') + '>Oculto / eliminado</option></select></div><div class="field full"><span class="label">Fotos</span><div class="photo-list" id="photo-list">' + photoRows + '</div><p class="hint">Puedes pegar URLs RAW de GitHub. En el mapa aparecerán al pasar el mouse por encima del punto.</p><button class="button" id="add-photo-btn" type="button" style="margin-top:10px;"><i class="fa-solid fa-plus"></i>Agregar URL de foto</button></div></div><div class="notice">Consejo: para puntos de cámaras puedes dejarlos ocultos o mantener la palabra cámara/camara/camera en el título. El mapa los excluirá automáticamente.</div></div></section></div>';
+
+      document.getElementById("field-title").addEventListener("input", function(event) { updateField(item, "title", event.target.value); });
+      document.getElementById("field-notes").addEventListener("input", function(event) { updateField(item, "notes", event.target.value); });
+      document.getElementById("field-deleted").addEventListener("change", function(event) { updateField(item, "deleted", event.target.value === "true"); });
+      document.getElementById("toggle-hidden-btn").addEventListener("click", function() { updateField(item, "deleted", !(getTarget(item).data.deleted === true)); renderEditor(); });
+      const colorInput = document.getElementById("field-color");
+      if (colorInput) colorInput.addEventListener("input", function(event) { updateField(item, "hexcolor", event.target.value); });
+      const elevationInput = document.getElementById("field-elevation");
+      if (elevationInput) elevationInput.addEventListener("input", function(event) { updateField(item, "elevation", event.target.value); });
+      document.getElementById("add-photo-btn").addEventListener("click", function() { addPhoto(item); });
+
+      document.querySelectorAll("[data-photo-url]").forEach(function(input) {
+        input.addEventListener("input", function(event) { updatePhotoUrl(item, Number(input.dataset.photoUrl), event.target.value); });
+      });
+
+      document.querySelectorAll("[data-remove-photo]").forEach(function(button) {
+        button.addEventListener("click", function() { removePhoto(item, Number(button.dataset.removePhoto)); });
+      });
+    }
+
+    function buildPhotoEditorRows(item, data) {
+      let photos = [];
+      if (item.photoIndex === null) {
+        photos = Array.isArray(data.photos) ? data.photos : [];
+      } else {
+        photos = [data];
+      }
+
+      if (!photos.length) {
+        return '<div class="photo-row"><div style="color:var(--muted);font-size:12px;line-height:1.5;">No hay fotos registradas todavía.</div></div>';
+      }
+
+      return photos.map(function(photo, index) {
+        const url = getPhotoUrl(photo) || "";
+        return '<div class="photo-row"><input class="input" data-photo-url="' + index + '" value="' + escapeAttribute(url) + '" placeholder="https://raw.githubusercontent.com/.../foto.jpg" /><button class="small-button danger" data-remove-photo="' + index + '" type="button">Quitar</button></div>';
+      }).join("");
+    }
+
+    function updateField(item, field, value) {
+      const target = getTarget(item);
+      const data = target.data;
+
+      if (field === "title") {
+        if (item.photoIndex === null) {
+          data.title = value;
+          if (data.name !== undefined) data.name = value;
+        } else {
+          data.title = value;
+        }
+      } else if (field === "notes") {
+        data.notes = value;
+      } else if (field === "deleted") {
+        data.deleted = value;
+      } else if (field === "hexcolor") {
+        data.hexcolor = value;
+      } else if (field === "elevation") {
+        data.elevation = value;
+      }
+
+      rebuildItems();
+      selectedId = item.id;
+      renderStats();
+      renderList();
+      showToast("Cambios guardados en memoria");
+    }
+
+    function addPhoto(item) {
+      const target = getTarget(item);
+      const data = target.data;
+
+      if (item.photoIndex === null) {
+        if (!Array.isArray(data.photos)) data.photos = [];
+        data.photos.push({ title: getTitle(data), web_url: "", notes: "" });
+      } else {
+        data.web_url = data.web_url || "";
+      }
+
+      rebuildItems();
+      selectedId = item.id;
+      renderStats();
+      renderList();
+      renderEditor();
+      showToast("Foto agregada");
+    }
+
+    function updatePhotoUrl(item, index, value) {
+      const target = getTarget(item);
+      const data = target.data;
+
+      if (item.photoIndex === null) {
+        if (!Array.isArray(data.photos)) data.photos = [];
+        if (!data.photos[index]) data.photos[index] = {};
+        data.photos[index].web_url = value;
+      } else {
+        data.web_url = value;
+      }
+
+      rebuildItems();
+      renderStats();
+      renderList();
+      showToast("URL de foto actualizada");
+    }
+
+    function removePhoto(item, index) {
+      const target = getTarget(item);
+      const data = target.data;
+
+      if (item.photoIndex === null) {
+        if (Array.isArray(data.photos)) data.photos.splice(index, 1);
+      } else {
+        data.web_url = "";
+        data.scaled_url = "";
+        data.thumbnail_url = "";
+        data.fullsize_url = "";
+        data.url = "";
+      }
+
+      rebuildItems();
+      selectedId = item.id;
+      renderStats();
+      renderList();
+      renderEditor();
+      showToast("Foto quitada");
+    }
+
+    function getTarget(item) {
+      const feature = geoJsonData.features[item.featureIndex];
+      const props = feature.properties || (feature.properties = {});
+      if (item.photoIndex === null) return { data: props, feature: feature };
+      if (!Array.isArray(props.photos)) props.photos = [];
+      if (!props.photos[item.photoIndex]) props.photos[item.photoIndex] = {};
+      return { data: props.photos[item.photoIndex], feature: feature };
+    }
+
+    function downloadGeoJson() {
+      if (!geoJsonData) {
+        alert("Primero carga tu archivo rutas-reserva.geojson.");
+        return;
+      }
+
+      const text = JSON.stringify(geoJsonData, null, 2);
+      const blob = new Blob([text], { type: "application/geo+json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "rutas-reserva.geojson";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast("GeoJSON descargado");
+    }
+
+    function getTitle(props) {
+      return props.title || props.name || props.id || "Sin nombre";
+    }
+
+    function getPhotoUrl(photo) {
+      return photo.web_url || photo.scaled_url || photo.thumbnail_url || photo.fullsize_url || photo.url || "";
+    }
+
+    function isCameraText(value) {
+      const text = String(value || "").toLowerCase();
+      return CAMERA_WORDS.some(function(word) { return text.includes(word); });
+    }
+
+    function normalizeColor(value) {
+      const color = String(value || "").trim();
+      return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#18c964";
+    }
+
+    function trimText(value, max) {
+      const text = String(value || "");
+      return text.length > max ? text.slice(0, max - 1) + "…" : text;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(function() { toast.classList.remove("show"); }, 1800);
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&")
+        .replaceAll("<", "<")
+        .replaceAll(">", ">")
+        .replaceAll('"', """)
+        .replaceAll("'", "'");
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value).replaceAll("`", "`");
+    }
+  </script>
+</body>
+</html>
