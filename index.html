@@ -606,19 +606,43 @@
       }
     }
 
-    @media (max-width: 560px) {
-      .stats {
-        grid-template-columns: repeat(3, 1fr);
-      }
+   @media (max-width: 920px) {
+  .main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 48vh auto;
+  }
 
-      .stat-label {
-        font-size: 7px;
-      }
+  #map-wrap {
+    grid-row: 1;
+    min-height: 0;
+  }
 
-      .main {
-        grid-template-rows: auto 68vh;
-      }
-    }
+  .sidebar {
+    grid-row: 2;
+    max-height: 48vh;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stat-label {
+    font-size: 7px;
+  }
+
+  .main {
+    grid-template-rows: 45vh auto;
+  }
+
+  .sidebar {
+    max-height: 45vh;
+  }
+}
   </style>
 </head>
 
