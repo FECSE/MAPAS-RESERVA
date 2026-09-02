@@ -146,6 +146,39 @@
     }
 
     .main {
+
+    .editor-map-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--green);
+      color: #04110a;
+      border: 1px solid var(--green);
+      border-radius: 3px;
+      text-decoration: none;
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+    }
+
+    .editor-map-button:hover {
+      background: var(--green-dark);
+      border-color: var(--green-dark);
+      color: #ffffff;
+    }
+
+    .editor-map-button:focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: 2px;
+    }
+
       display: grid;
       grid-template-columns: 320px 1fr;
       min-height: 0;
@@ -616,6 +649,11 @@
           <span class="stat-label">Fotos</span>
         </div>
       </section>
+
+      <a href="./editor.html" target="_blank" class="editor-map-button">
+        <i class="fa-solid fa-pen-to-square"></i>
+        Editor
+      </a>
     </header>
 
     <main class="main">
