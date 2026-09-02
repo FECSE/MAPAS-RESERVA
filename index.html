@@ -3,39 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mapa Reserva</title>
+
+  <title>Mapa Reserva Natural</title>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --forest-950: #07140f;
-      --forest-900: #10231a;
-      --forest-800: #173527;
-      --forest-700: #1f4a36;
-      --forest-600: #2f6f4f;
-      --forest-100: #e8f2ec;
-      --stone-950: #10100e;
-      --stone-900: #1d1c18;
-      --stone-800: #2b2924;
-      --stone-700: #444039;
-      --stone-600: #625c51;
-      --stone-500: #7c7568;
-      --stone-300: #c8c0b2;
-      --stone-200: #ddd6ca;
-      --stone-100: #eee9df;
-      --stone-50: #f8f5ef;
-      --accent: #d59f35;
-      --accent-dark: #9a6815;
+      --bg-950: #070b10;
+      --bg-925: #0b1118;
+      --bg-900: #101720;
+      --bg-850: #141c26;
+      --bg-800: #182230;
+      --line: rgba(148, 163, 184, 0.16);
+      --line-strong: rgba(148, 163, 184, 0.28);
+      --text: #e5edf7;
+      --muted: #8ea0b5;
+      --muted-2: #65758a;
+      --green: #18c964;
+      --green-dark: #0f9f4d;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --orange: #f97316;
+      --purple: #8b5cf6;
+      --pink: #d946ef;
+      --red: #ef4444;
       --white: #ffffff;
-      --danger: #b42318;
-      --line: rgba(16, 16, 14, 0.14);
     }
 
     * {
@@ -47,8 +47,8 @@
       height: 100%;
       margin: 0;
       font-family: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--stone-50);
-      color: var(--stone-900);
+      background: var(--bg-950);
+      color: var(--text);
     }
 
     body {
@@ -57,16 +57,17 @@
 
     .app-shell {
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: 64px 1fr;
       height: 100vh;
       width: 100vw;
+      background: var(--bg-950);
     }
 
     .topbar {
-      background: var(--forest-950);
-      color: var(--stone-50);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 18px 24px;
+      background: var(--bg-900);
+      color: var(--text);
+      border-bottom: 1px solid var(--line);
+      padding: 0 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -77,77 +78,81 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       min-width: 240px;
     }
 
     .brand-mark {
-      width: 42px;
-      height: 42px;
-      border: 1px solid rgba(255, 255, 255, 0.25);
+      width: 32px;
+      height: 32px;
       display: grid;
       place-items: center;
-      color: var(--accent);
-      flex: 0 0 auto;
+      color: var(--green);
+      border: 1px solid var(--line-strong);
+      background: var(--bg-850);
     }
 
     .brand h1 {
       margin: 0;
-      font-size: 20px;
+      color: var(--text);
+      font-size: 14px;
       line-height: 1.1;
-      letter-spacing: -0.02em;
-      font-weight: 700;
+      font-weight: 800;
+      letter-spacing: 0.01em;
     }
 
     .brand p {
-      margin: 3px 0 0;
-      font-size: 12px;
-      color: var(--stone-300);
+      margin: 0 0 5px;
+      color: var(--green);
+      font-size: 9px;
+      line-height: 1;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
     }
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(90px, 1fr));
-      gap: 0;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      min-width: 360px;
+      grid-template-columns: repeat(3, auto);
+      gap: 24px;
+      min-width: 0;
+      border: 0;
     }
 
     .stat {
-      padding: 8px 16px;
-      border-right: 1px solid rgba(255, 255, 255, 0.16);
-    }
-
-    .stat:last-child {
-      border-right: 0;
+      padding: 0;
+      border: 0;
+      text-align: center;
     }
 
     .stat-value {
       display: block;
-      font-size: 22px;
-      font-weight: 700;
+      color: #60a5fa;
+      font-size: 13px;
       line-height: 1;
-      color: var(--stone-50);
+      font-weight: 800;
       font-variant-numeric: tabular-nums;
     }
 
     .stat-label {
       display: block;
       margin-top: 5px;
-      font-size: 10px;
+      color: var(--muted-2);
+      font-size: 8px;
+      line-height: 1;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--stone-300);
+      letter-spacing: 0.11em;
     }
 
     .main {
       display: grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 320px 1fr;
       min-height: 0;
     }
 
     .sidebar {
-      background: var(--stone-50);
+      background: var(--bg-925);
       border-right: 1px solid var(--line);
       display: grid;
       grid-template-rows: auto auto 1fr;
@@ -156,71 +161,91 @@
     }
 
     .sidebar-header {
-      padding: 22px 22px 16px;
+      padding: 0;
       border-bottom: 1px solid var(--line);
     }
 
-    .sidebar-header h2 {
-      margin: 0;
-      font-size: 22px;
-      line-height: 1.15;
-      letter-spacing: -0.02em;
+    .sidebar-title {
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg-900);
     }
 
-    .sidebar-header p {
-      margin: 8px 0 0;
-      color: var(--stone-600);
+    .sidebar-title h2 {
+      margin: 0;
+      color: var(--text);
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .sidebar-title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.35;
     }
 
     .search-row {
-      margin-top: 16px;
+      margin: 0;
+      padding: 12px;
       position: relative;
+      background: var(--bg-925);
+      border-bottom: 1px solid var(--line);
     }
 
     .search-row i {
       position: absolute;
-      left: 12px;
+      left: 23px;
       top: 50%;
       transform: translateY(-50%);
-      color: var(--stone-500);
-      font-size: 13px;
+      color: var(--muted-2);
+      font-size: 11px;
+      pointer-events: none;
     }
 
     .search-row input {
       width: 100%;
-      border: 1px solid var(--line);
-      background: var(--white);
-      color: var(--stone-900);
-      padding: 11px 12px 11px 36px;
+      border: 1px solid var(--line-strong);
+      background: var(--bg-850);
+      color: var(--text);
+      padding: 11px 12px 11px 32px;
       font-family: inherit;
-      font-size: 14px;
+      font-size: 12px;
       outline: none;
-      border-radius: 0;
+      border-radius: 3px;
+    }
+
+    .search-row input::placeholder {
+      color: var(--muted-2);
     }
 
     .search-row input:focus {
-      border-color: var(--forest-700);
-      box-shadow: 0 0 0 2px rgba(47, 111, 79, 0.16);
+      border-color: var(--green);
+      box-shadow: none;
     }
 
     .tabs {
       display: grid;
       grid-template-columns: 1fr 1fr;
+      background: var(--bg-925);
       border-bottom: 1px solid var(--line);
     }
 
     .tab {
       border: 0;
-      background: var(--stone-50);
       border-right: 1px solid var(--line);
-      padding: 13px 10px;
+      background: var(--bg-925);
+      color: var(--muted);
+      padding: 14px 8px;
       font-family: inherit;
-      font-weight: 700;
-      color: var(--stone-700);
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
       cursor: pointer;
-      transition: background 160ms ease, color 160ms ease;
+      transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
     }
 
     .tab:last-child {
@@ -228,18 +253,38 @@
     }
 
     .tab.active {
-      background: var(--forest-900);
-      color: var(--stone-50);
+      background: var(--bg-925);
+      color: var(--text);
+      border-bottom: 3px solid var(--green);
+    }
+
+    .tab:hover {
+      color: var(--text);
+      background: var(--bg-850);
     }
 
     .tab:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid var(--green);
       outline-offset: -2px;
     }
 
     .feature-list {
       overflow: auto;
       min-height: 0;
+      background: var(--bg-925);
+    }
+
+    .feature-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .feature-list::-webkit-scrollbar-track {
+      background: var(--bg-925);
+    }
+
+    .feature-list::-webkit-scrollbar-thumb {
+      background: var(--bg-800);
+      border: 1px solid var(--line);
     }
 
     .feature-row {
@@ -249,16 +294,16 @@
       border-bottom: 1px solid var(--line);
       background: transparent;
       text-align: left;
-      padding: 16px 22px;
+      padding: 13px 14px;
       font-family: inherit;
       color: inherit;
       cursor: pointer;
-      transition: background 160ms ease;
+      transition: background 140ms ease;
     }
 
     .feature-row:hover,
     .feature-row:focus-visible {
-      background: var(--stone-100);
+      background: var(--bg-850);
       outline: none;
     }
 
@@ -267,41 +312,61 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      font-size: 15px;
-      font-weight: 700;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
       line-height: 1.25;
-      color: var(--stone-900);
     }
 
     .feature-color {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border: 1px solid rgba(0, 0, 0, 0.22);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
       flex: 0 0 auto;
-      margin-top: 3px;
+      margin-top: 0;
+      border-radius: 3px;
+    }
+
+    .feature-color::before {
+      content: "\f542";
+      font-family: "Font Awesome 6 Free";
+      font-weight: 900;
+      color: #ffffff;
+      font-size: 10px;
+    }
+
+    .feature-color.point::before {
+      content: "\f3c5";
     }
 
     .feature-meta {
-      margin-top: 8px;
+      margin-top: 5px;
       display: flex;
       flex-wrap: wrap;
-      gap: 8px 12px;
-      color: var(--stone-600);
-      font-size: 12px;
+      gap: 7px 10px;
+      color: var(--muted);
+      font-size: 10px;
       line-height: 1.4;
     }
 
     .feature-meta span {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 4px;
+    }
+
+    .feature-meta i {
+      font-size: 9px;
+      color: var(--muted-2);
     }
 
     .empty-state {
-      padding: 22px;
-      color: var(--stone-600);
-      font-size: 14px;
+      padding: 18px 14px;
+      color: var(--muted);
+      font-size: 12px;
       line-height: 1.5;
     }
 
@@ -309,20 +374,59 @@
       width: 100%;
       height: 100%;
       min-height: 0;
-      background: var(--stone-200);
+      background: #101720;
+    }
+
+    .leaflet-control-zoom {
+      border: 0 !important;
+      margin-top: 14px !important;
+      margin-left: 14px !important;
+    }
+
+    .leaflet-control-zoom a {
+      width: 28px !important;
+      height: 28px !important;
+      line-height: 27px !important;
+      background: #ffffff !important;
+      color: #111827 !important;
+      border: 1px solid rgba(15, 23, 42, 0.2) !important;
+      border-radius: 2px !important;
+      font-weight: 800;
     }
 
     .leaflet-control-layers {
-      border-radius: 0 !important;
+      border-radius: 3px !important;
       box-shadow: none !important;
-      border: 1px solid var(--line) !important;
+      border: 1px solid var(--line-strong) !important;
+      background: var(--bg-900) !important;
+      color: var(--text) !important;
       font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: 11px;
+    }
+
+    .leaflet-control-layers-expanded {
+      padding: 8px 10px !important;
+    }
+
+    .leaflet-control-layers label {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .leaflet-control-layers-toggle {
+      background-color: #ffffff !important;
+    }
+
+    .leaflet-control-attribution {
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      font-size: 10px;
     }
 
     .leaflet-popup-content-wrapper {
-      border-radius: 0;
+      border-radius: 3px;
       box-shadow: none;
-      border: 1px solid rgba(16, 16, 14, 0.18);
+      border: 1px solid rgba(15, 23, 42, 0.22);
+      overflow: hidden;
     }
 
     .leaflet-popup-content {
@@ -336,41 +440,42 @@
     }
 
     .popup {
-      background: var(--white);
-      color: var(--stone-900);
+      background: #ffffff;
+      color: #111827;
     }
 
     .popup-header {
-      padding: 14px 15px 12px;
-      border-bottom: 1px solid var(--line);
+      padding: 13px 14px 11px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+      background: #f8fafc;
     }
 
     .popup-kicker {
-      margin: 0 0 6px;
-      color: var(--accent-dark);
-      font-size: 10px;
+      margin: 0 0 5px;
+      color: #047857;
+      font-size: 9px;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .popup-title {
       margin: 0;
-      color: var(--stone-900);
-      font-size: 17px;
+      color: #111827;
+      font-size: 15px;
       line-height: 1.2;
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .popup-body {
-      padding: 12px 15px 15px;
-      color: var(--stone-700);
-      font-size: 13px;
+      padding: 12px 14px 14px;
+      color: #374151;
+      font-size: 12px;
       line-height: 1.45;
     }
 
     .popup-body p {
-      margin: 0 0 10px;
+      margin: 0 0 9px;
     }
 
     .popup-body p:last-child {
@@ -389,48 +494,39 @@
       width: 100%;
       aspect-ratio: 1 / 1;
       object-fit: cover;
-      border: 1px solid var(--line);
+      border: 1px solid rgba(15, 23, 42, 0.14);
+      border-radius: 2px;
     }
 
     .popup-photo-note {
       margin-top: 10px;
-      color: var(--stone-600);
-      font-size: 12px;
-    }
-
-    .trail-label {
-      background: var(--forest-950);
-      color: var(--stone-50);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 0;
-      box-shadow: none;
-      padding: 4px 8px;
-      font-family: "Space Grotesk", system-ui, sans-serif;
-      font-size: 12px;
-      font-weight: 700;
+      color: #64748b;
+      font-size: 11px;
     }
 
     .poi-marker {
-      width: 18px;
-      height: 18px;
-      background: var(--accent);
-      border: 2px solid var(--forest-950);
+      width: 17px;
+      height: 17px;
+      background: var(--cyan);
+      border: 2px solid #ffffff;
+      border-radius: 999px;
     }
 
     .map-message {
       position: absolute;
       left: 50%;
-      top: 22px;
+      top: 18px;
       transform: translateX(-50%);
       z-index: 1200;
       max-width: min(520px, calc(100vw - 40px));
-      background: var(--forest-950);
-      color: var(--stone-50);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      padding: 12px 14px;
-      font-size: 13px;
+      background: var(--bg-900);
+      color: var(--text);
+      border: 1px solid var(--line-strong);
+      padding: 11px 13px;
+      font-size: 12px;
       line-height: 1.4;
       display: none;
+      border-radius: 3px;
     }
 
     .map-message.is-visible {
@@ -445,16 +541,24 @@
       .app-shell {
         height: auto;
         min-height: 100vh;
+        grid-template-rows: auto 1fr;
       }
 
       .topbar {
+        min-height: 64px;
         align-items: flex-start;
         flex-direction: column;
+        justify-content: center;
+        padding: 12px 14px;
+        gap: 10px;
       }
 
       .stats {
         width: 100%;
-        min-width: 0;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
       }
 
       .main {
@@ -470,27 +574,16 @@
     }
 
     @media (max-width: 560px) {
-      .topbar {
-        padding: 16px;
-      }
-
       .stats {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, 1fr);
       }
 
-      .stat {
-        border-right: 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+      .stat-label {
+        font-size: 7px;
       }
 
-      .stat:last-child {
-        border-bottom: 0;
-      }
-
-      .sidebar-header,
-      .feature-row {
-        padding-left: 16px;
-        padding-right: 16px;
+      .main {
+        grid-template-rows: auto 68vh;
       }
     }
   </style>
@@ -504,8 +597,8 @@
           <i class="fa-solid fa-route"></i>
         </div>
         <div>
-          <h1>Rutas Reserva</h1>
-          <p>Senderos y puntos de interés desde GeoJSON</p>
+          <p>Reserva Natural</p>
+          <h1>Mapa de Rutas y Transectos</h1>
         </div>
       </div>
 
@@ -528,18 +621,24 @@
     <main class="main">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <h2>Explorar la reserva</h2>
-          <p>Datos cargados exclusivamente desde <strong>rutas-reserva.geojson</strong>. Los puntos de cámaras fueron excluidos.</p>
+          <div class="sidebar-title">
+            <h2>Explorar mapa</h2>
+            <p>Rutas, transectos y puntos de interés cargados desde GeoJSON.</p>
+          </div>
 
           <div class="search-row">
             <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-            <input id="search-input" type="search" placeholder="Buscar sendero o punto..." autocomplete="off" />
+            <input id="search-input" type="search" placeholder="Buscar ruta o punto..." autocomplete="off" />
           </div>
         </div>
 
         <div class="tabs" role="tablist" aria-label="Tipo de elemento">
-          <button class="tab active" id="tab-trails" type="button" role="tab" aria-selected="true">Senderos</button>
-          <button class="tab" id="tab-points" type="button" role="tab" aria-selected="false">Puntos de interés</button>
+          <button class="tab active" id="tab-trails" type="button" role="tab" aria-selected="true">
+            Senderos
+          </button>
+          <button class="tab" id="tab-points" type="button" role="tab" aria-selected="false">
+            Puntos
+          </button>
         </div>
 
         <div class="feature-list" id="feature-list" aria-live="polite"></div>
@@ -553,13 +652,17 @@
   </div>
 
   <script>
-    const GEOJSON_URL = "rutas-reserva.geojson";
+    const GEOJSON_URL = "./rutas-reserva.geojson";
 
     /*
-      Agrega aquí tus fotos futuras desde GitHub.
+      Para agregar fotos luego desde GitHub:
 
-      La clave debe coincidir exactamente con el título del punto o sendero.
-      Puedes usar URLs absolutas de GitHub raw, por ejemplo:
+      1. Sube las fotos a GitHub.
+      2. Usa el enlace RAW de cada imagen.
+      3. Agrega cada URL dentro de PHOTO_LIBRARY.
+      4. La clave debe coincidir con el nombre exacto del punto o sendero.
+
+      Ejemplo:
 
       const PHOTO_LIBRARY = {
         "Mirador de aves": [
@@ -570,10 +673,8 @@
           "https://raw.githubusercontent.com/usuario/repositorio/main/fotos/cascada-1.jpg"
         ]
       };
-
-      Si una clave no existe aquí, el mapa usará las fotos que vengan en el GeoJSON
-      cuando tengan URL disponible.
     */
+
     const PHOTO_LIBRARY = {};
 
     let map;
@@ -600,21 +701,18 @@
       }).setView([0.1523, -78.8452], 16);
 
       const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+        maxZoom: 19,
         attribution: "Tiles &copy; Esri"
       });
 
-      const topo = L.tileLayer("https://cdnjs.cloudflare.com/ajax/libs/leaflet-providers/1.13.0/leaflet-providers.min.js", {
-        attribution: ""
+      const topographic = L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+        maxZoom: 17,
+        attribution: "Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap"
       });
 
-      const openStreetMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 20,
+      const standard = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
         attribution: "&copy; OpenStreetMap contributors"
-      });
-
-      const cartoTopo = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        maxZoom: 20,
-        attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
       });
 
       satellite.addTo(map);
@@ -625,8 +723,8 @@
       L.control.layers(
         {
           "Satélite": satellite,
-          "OpenStreetMap": openStreetMap,
-          "Carto claro": cartoTopo
+          "Topográfico": topographic,
+          "Estándar": standard
         },
         {
           "Senderos": trailsLayer,
@@ -653,18 +751,24 @@
     async function loadGeoJson() {
       try {
         showMessage("Cargando rutas desde rutas-reserva.geojson...");
-        const response = await fetch(GEOJSON_URL);
+
+        const response = await fetch(GEOJSON_URL, {
+          cache: "no-store"
+        });
 
         if (!response.ok) {
-          throw new Error("No se pudo cargar el archivo GeoJSON.");
+          throw new Error("No se pudo cargar el archivo GeoJSON. Estado: " + response.status);
         }
 
         const geoJson = await response.json();
+
+        console.log("GeoJSON cargado correctamente:", geoJson);
+
         renderData(geoJson);
         hideMessage();
       } catch (error) {
-        console.error(error);
-        showMessage("No se pudo cargar rutas-reserva.geojson. Confirma que el archivo esté en la misma carpeta que este HTML.");
+        console.error("Error cargando GeoJSON:", error);
+        showMessage("No se pudo cargar rutas-reserva.geojson. Revisa que esté en la misma carpeta que Index.html y que el nombre sea exacto.");
       }
     }
 
@@ -734,7 +838,7 @@
         id: feature.id || props.id || title,
         title: title,
         notes: props.notes || "",
-        color: props.hexcolor || getStrokeColor(feature) || "#2f6f4f",
+        color: props.hexcolor || getStrokeColor(feature) || "#18c964",
         distance: Number(props.distance) || 0,
         totalAscent: Number(props.total_ascent) || 0,
         totalDescent: Number(props.total_descent) || 0,
@@ -759,17 +863,22 @@
 
           if (!isCameraText(title)) {
             const coords = geometry.coordinates || [];
-            points.push({
-              id: feature.id || props.id || title,
-              title: title,
-              notes: props.notes || "",
-              lat: Number(coords[1]),
-              lng: Number(coords[0]),
-              elevation: props.elevation,
-              photos: getPhotosForTitle(title, props.photos || []),
-              source: "point",
-              layer: null
-            });
+            const lng = Number(coords[0]);
+            const lat = Number(coords[1]);
+
+            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+              points.push({
+                id: feature.id || props.id || title,
+                title: title,
+                notes: props.notes || "",
+                lat: lat,
+                lng: lng,
+                elevation: props.elevation,
+                photos: getPhotosForTitle(title, props.photos || []),
+                source: "point",
+                layer: null
+              });
+            }
           }
         }
 
@@ -896,7 +1005,10 @@
         }).addTo(layerGroup);
       });
 
-      layerGroup.bindPopup(buildTrailPopup(trail));
+      layerGroup.bindPopup(buildTrailPopup(trail), {
+        closeButton: true,
+        autoPan: true
+      });
 
       layerGroup.on("mouseover", function () {
         layerGroup.openPopup();
@@ -955,7 +1067,7 @@
       return [
         '<article class="popup">',
           '<div class="popup-header">',
-            '<p class="popup-kicker">Sendero</p>',
+            '<p class="popup-kicker">Sendero / Transecto</p>',
             '<h3 class="popup-title">' + escapeHtml(trail.title) + '</h3>',
           '</div>',
           '<div class="popup-body">',
@@ -1019,7 +1131,7 @@
           return photo && photo.deleted !== true && !isCameraText(photo.title || "");
         })
         .map(function (photo) {
-          const url = photo.web_url || photo.scaled_url || photo.thumbnail_url || photo.fullsize_url;
+          const url = photo.web_url || photo.scaled_url || photo.thumbnail_url || photo.fullsize_url || photo.url;
 
           if (!url) {
             return null;
@@ -1050,14 +1162,15 @@
 
     function renderSidebarList() {
       const list = document.getElementById("feature-list");
-      const searchValue = document.getElementById("search-input").value.trim().toLowerCase();
+      const searchInput = document.getElementById("search-input");
+      const searchValue = searchInput.value.trim().toLowerCase();
 
       const source = currentTab === "trails" ? allTrails : allPoints;
 
       const filtered = source.filter(function (item) {
-        const title = item.title.toLowerCase();
-        const notes = (item.notes || "").toLowerCase();
-        const parentTrail = (item.parentTrail || "").toLowerCase();
+        const title = String(item.title || "").toLowerCase();
+        const notes = String(item.notes || "").toLowerCase();
+        const parentTrail = String(item.parentTrail || "").toLowerCase();
 
         return !searchValue ||
           title.includes(searchValue) ||
@@ -1100,9 +1213,9 @@
           '<span class="feature-color" style="background:' + escapeAttribute(trail.color) + '"></span>',
         '</div>',
         '<div class="feature-meta">',
-          '<span><i class="fa-solid fa-ruler-horizontal"></i>' + escapeHtml(formatDistance(trail.distance)) + '</span>',
-          '<span><i class="fa-solid fa-mountain"></i>' + Math.round(trail.totalAscent || 0) + ' m ascenso</span>',
-          '<span><i class="fa-regular fa-image"></i>' + trail.photos.length + ' fotos</span>',
+          '<span><i class="fa-solid fa-route"></i>Ruta / Transecto</span>',
+          trail.distance ? '<span><i class="fa-solid fa-ruler-horizontal"></i>' + escapeHtml(formatDistance(trail.distance)) + '</span>' : '',
+          trail.photos.length ? '<span><i class="fa-regular fa-image"></i>' + trail.photos.length + ' fotos</span>' : '',
         '</div>'
       ].join("");
     }
@@ -1115,12 +1228,12 @@
       return [
         '<div class="feature-row-title">',
           '<span>' + escapeHtml(point.title) + '</span>',
-          '<span class="feature-color" style="background: var(--accent)"></span>',
+          '<span class="feature-color point" style="background: var(--cyan)"></span>',
         '</div>',
         '<div class="feature-meta">',
           '<span><i class="fa-solid fa-location-dot"></i>' + escapeHtml(elevation) + '</span>',
-          '<span><i class="fa-regular fa-image"></i>' + point.photos.length + ' fotos</span>',
           point.parentTrail ? '<span><i class="fa-solid fa-route"></i>' + escapeHtml(point.parentTrail) + '</span>' : '',
+          point.photos.length ? '<span><i class="fa-regular fa-image"></i>' + point.photos.length + ' fotos</span>' : '',
         '</div>'
       ].join("");
     }
@@ -1197,6 +1310,7 @@
 
     function isCameraText(value) {
       const text = String(value || "").toLowerCase();
+
       return CAMERA_WORDS.some(function (word) {
         return text.includes(word);
       });
