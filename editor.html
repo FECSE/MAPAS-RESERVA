@@ -4,532 +4,847 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Editor GeoJSON Reserva</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
   :root{
-    --bg:#0a0f18;
-    --panel:#0d1420;
-    --panel-alt:#0b1017;
-    --border:rgba(148,163,184,0.15);
-    --text:#e5edf7;
-    --text-dim:#8ea0b5;
-    --green:#22c55e;
-    --purple:#8b5cf6;
-    --teal:#06b6d4;
-    --blue:#3b82f6;
-    --orange:#f59e0b;
+    --bg-950:#070b10; --bg-925:#0b1118; --bg-900:#101720; --bg-850:#141c26; --bg-800:#182230;
+    --line:rgba(148,163,184,0.16); --line-strong:rgba(148,163,184,0.28);
+    --text:#e5edf7; --muted:#8ea0b5; --muted-2:#65758a;
+    --green:#18c964; --green-dark:#0f9f4d;
+    --blue:#3b82f6; --cyan:#06b6d4; --orange:#f97316; --purple:#8b5cf6; --red:#ef4444;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:Arial, Helvetica, sans-serif;
-    background:var(--bg);
-    color:var(--text);
-  }
-  header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:14px 24px;
-    background:var(--panel-alt);
-    border-bottom:1px solid var(--border);
-  }
-  .brand{display:flex;align-items:center;gap:10px;}
-  .brand-icon{
-    width:32px;height:32px;border-radius:8px;
-    background:linear-gradient(135deg,var(--green),#0f9f4d);
-    display:flex;align-items:center;justify-content:center;
-    font-size:16px;
-  }
-  .brand-text .label{
-    font-size:11px;letter-spacing:.08em;color:var(--green);
-    font-weight:700;text-transform:uppercase;
-  }
-  .brand-text h1{margin:2px 0 0;font-size:17px;color:#fff;}
-  .stats{display:flex;gap:28px;}
-  .stat{text-align:center;}
-  .stat .num{font-size:18px;font-weight:700;color:#fff;}
-  .stat .cap{font-size:10px;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;}
-  .editor-tag{color:var(--purple);font-weight:700;font-size:13px;}
+  html,body{height:100%;margin:0;font-family:"Space Grotesk",system-ui,sans-serif;background:var(--bg-950);color:var(--text);}
+  body{overflow:hidden;}
 
-  main{
-    display:grid;
-    grid-template-columns:320px 1fr;
-    height:calc(100vh - 65px);
+  .app-shell{display:grid;grid-template-rows:64px 1fr;height:100vh;width:100vw;}
+
+  header{
+    background:var(--bg-900);border-bottom:1px solid var(--line);padding:0 18px;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;z-index:1000;
   }
-  aside{
-    border-right:1px solid var(--border);
-    overflow-y:auto;
-    background:var(--panel);
-    display:flex;flex-direction:column;
+  .brand{display:flex;align-items:center;gap:12px;min-width:220px;}
+  .brand-mark{width:32px;height:32px;display:grid;place-items:center;color:var(--purple);border:1px solid var(--line-strong);background:var(--bg-850);}
+  .brand p{margin:0 0 5px;color:var(--purple);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.14em;}
+  .brand h1{margin:0;font-size:14px;font-weight:800;}
+
+  .stats{display:grid;grid-template-columns:repeat(3,auto);gap:24px;}
+  .stat{text-align:center;}
+  .stat-value{display:block;color:#60a5fa;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .stat-label{display:block;margin-top:5px;color:var(--muted-2);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.11em;}
+
+  .map-link{
+    display:inline-flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg-850);color:var(--text);
+    border:1px solid var(--line-strong);border-radius:3px;text-decoration:none;font-size:11px;font-weight:800;
+    text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;
   }
-  .side-top{padding:16px;border-bottom:1px solid var(--border);}
-  .side-top p{color:var(--text-dim);font-size:12px;margin:4px 0 14px;}
+  .map-link:hover{background:var(--bg-800);}
+
+  .main{display:grid;grid-template-columns:340px 1fr;min-height:0;}
+
+  aside{background:var(--bg-925);border-right:1px solid var(--line);display:grid;grid-template-rows:auto auto auto 1fr;min-height:0;}
+
+  .side-top{padding:12px;border-bottom:1px solid var(--line);background:var(--bg-925);}
 
   button, label.file-label{
-    display:block;width:100%;padding:11px;margin:8px 0;
-    background:var(--green);color:#04110a;border:none;cursor:pointer;
-    font-weight:700;text-align:center;border-radius:6px;font-size:13px;
-    transition:background .15s, color .15s;
+    display:block;width:100%;padding:10px;margin:6px 0;background:var(--green);color:#04110a;border:none;
+    cursor:pointer;font-weight:800;text-align:center;border-radius:3px;font-size:11px;text-transform:uppercase;
+    letter-spacing:.05em;transition:background .14s,color .14s;
   }
-  button:hover, label.file-label:hover{background:#0f9f4d;color:#fff;}
+  button:hover, label.file-label:hover{background:var(--green-dark);color:#fff;}
   button:disabled{opacity:.4;cursor:not-allowed;}
   input[type="file"]{display:none;}
 
-  .search{
-    width:100%;padding:10px 12px;background:var(--panel-alt);
-    border:1px solid var(--border);border-radius:6px;color:var(--text);
-    font-size:13px;margin-top:4px;
-  }
+  button.secondary{background:var(--purple);color:#fff;}
+  button.secondary:hover{background:#7c3aed;}
+  button.danger{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,.4);}
+  button.danger:hover{background:rgba(239,68,68,.12);color:#fecaca;}
 
-  .status{padding:12px 16px;color:var(--text-dim);font-size:13px;}
-  .error{margin:0 16px;padding:10px 12px;border-radius:6px;color:#fecaca;background:rgba(239,68,68,.12);display:none;font-size:13px;}
-  .success{margin:0 16px 10px;padding:10px 12px;border-radius:6px;color:#bbf7d0;background:rgba(34,197,94,.12);display:none;font-size:13px;}
+  .search-row{position:relative;padding:10px 12px;border-bottom:1px solid var(--line);}
+  .search-row i{position:absolute;left:23px;top:50%;transform:translateY(-50%);color:var(--muted-2);font-size:11px;}
+  .search-row input{
+    width:100%;border:1px solid var(--line-strong);background:var(--bg-850);color:var(--text);
+    padding:10px 12px 10px 30px;font-family:inherit;font-size:12px;border-radius:3px;outline:none;
+  }
+  .search-row input:focus{border-color:var(--green);}
 
-  .list-header{
-    padding:12px 16px 0;font-size:11px;color:var(--text-dim);
-    text-transform:uppercase;letter-spacing:.06em;
-  }
-  #list{flex:1;overflow-y:auto;}
-  .item{
-    display:flex;align-items:center;gap:10px;
-    padding:12px 16px;border-bottom:1px solid var(--border);
-    cursor:pointer;
-  }
-  .item:hover{background:#141c26;}
-  .item.active{background:#182230;border-left:4px solid var(--green);padding-left:12px;}
-  .badge{
-    width:26px;height:26px;border-radius:6px;flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;
-  }
-  .item-info .title{font-size:13px;font-weight:600;color:#fff;}
-  .item-info .meta{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .status{padding:10px 12px;color:var(--muted);font-size:12px;}
+  .error{margin:0 12px 8px;padding:9px 11px;border-radius:3px;color:#fecaca;background:rgba(239,68,68,.12);display:none;font-size:12px;}
+  .success{margin:0 12px 8px;padding:9px 11px;border-radius:3px;color:#bbf7d0;background:rgba(24,201,100,.12);display:none;font-size:12px;}
 
-  section{padding:24px;overflow-y:auto;background:var(--bg);}
-  section h2{margin-top:0;font-size:18px;color:#fff;}
-  section p{color:var(--text-dim);font-size:13px;}
+  .tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);}
+  .tab{border:0;border-right:1px solid var(--line);background:var(--bg-925);color:var(--muted);padding:12px 8px;
+    font-family:inherit;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;}
+  .tab:last-child{border-right:0;}
+  .tab.active{color:var(--text);border-bottom:3px solid var(--green);}
+  .tab:hover{background:var(--bg-850);color:var(--text);}
 
-  .field-label{
-    display:block;font-size:12px;color:var(--text-dim);
-    margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;
-  }
-  input.field, textarea.field{
-    width:100%;box-sizing:border-box;margin-bottom:16px;padding:10px 12px;
-    background:var(--panel-alt);color:var(--text);
-    border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;
-  }
-  textarea.field{min-height:100px;resize:vertical;}
-  .save-btn{max-width:220px;}
+  .feature-list{overflow:auto;min-height:0;}
+  .feature-list::-webkit-scrollbar{width:8px;}
+  .feature-list::-webkit-scrollbar-thumb{background:var(--bg-800);border:1px solid var(--line);}
 
-  .upload-row{
-    display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;
-  }
-  .upload-label{
-    display:inline-block;width:auto;padding:9px 14px;margin:0;
-    background:var(--purple);color:#fff;font-size:12px;
-  }
-  .upload-label:hover{background:#7c3aed;color:#fff;}
+  .feature-row{display:block;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;
+    text-align:left;padding:11px 12px;font-family:inherit;color:inherit;cursor:pointer;margin:0;border-radius:0;
+    text-transform:none;letter-spacing:normal;font-weight:normal;}
+  .feature-row:hover{background:var(--bg-850);}
+  .feature-row.active{background:var(--bg-800);border-left:3px solid var(--green);}
+  .feature-row.deleted-item{opacity:.5;}
 
-  .photo-grid{
-    display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;
+  .feature-row-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;color:var(--text);font-size:12px;font-weight:800;}
+  .feature-color{display:inline-flex;align-items:center;justify-content:center;width:24px;height:20px;border-radius:3px;flex:0 0 auto;color:#fff;font-size:10px;}
+  .feature-meta{margin-top:5px;display:flex;flex-wrap:wrap;gap:6px 10px;color:var(--muted);font-size:10px;}
+  .empty-state{padding:16px 12px;color:var(--muted);font-size:12px;line-height:1.5;}
+
+  section#editor{padding:22px;overflow-y:auto;background:var(--bg-950);}
+  section#editor h2{margin-top:0;font-size:17px;}
+  section#editor p.hint{color:var(--muted);font-size:12px;}
+
+  .field-label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;}
+  input.field, textarea.field, select.field{
+    width:100%;box-sizing:border-box;margin-bottom:14px;padding:9px 11px;background:var(--bg-900);color:var(--text);
+    border:1px solid var(--line-strong);border-radius:3px;font-size:12px;font-family:inherit;
   }
-  .photo-thumb{
-    position:relative;width:84px;height:84px;border-radius:6px;
-    overflow:hidden;border:1px solid var(--border);background:#000;
-  }
+  textarea.field{min-height:90px;resize:vertical;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:640px){.row2{grid-template-columns:1fr;}}
+
+  .badge-row{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:3px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;}
+  .badge.trail{background:rgba(24,201,100,.14);color:#a7f3d0;}
+  .badge.point{background:rgba(6,182,212,.14);color:#a5f3fc;}
+  .badge.deleted{background:rgba(239,68,68,.14);color:#fecaca;}
+  .badge.active{background:rgba(24,201,100,.14);color:#a7f3d0;}
+
+  .checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .checkbox-row input{width:auto;margin:0;}
+  .checkbox-row label{font-size:12px;color:var(--text);text-transform:none;font-weight:600;}
+
+  #pointMap{width:100%;height:260px;border:1px solid var(--line-strong);border-radius:3px;margin-bottom:14px;background:#101720;}
+
+  .upload-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+  .upload-label{width:auto;padding:9px 14px;}
+  .photo-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+  .photo-thumb{position:relative;width:80px;height:80px;border-radius:3px;overflow:hidden;border:1px solid var(--line);background:#000;}
   .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-  .photo-thumb .remove-btn{
-    position:absolute;top:2px;right:2px;width:20px;height:20px;
-    border-radius:50%;background:rgba(0,0,0,.65);color:#fecaca;
-    font-size:12px;line-height:20px;text-align:center;cursor:pointer;
-    font-weight:700;
+  .photo-thumb .remove-btn{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.65);
+    color:#fecaca;font-size:11px;line-height:18px;text-align:center;cursor:pointer;font-weight:700;}
+  .photo-thumb .remove-btn:hover{background:var(--red);color:#fff;}
+
+  .save-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+  .save-row button{width:auto;padding:11px 18px;}
+
+  .stat-box{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+  .stat-box div{background:var(--bg-900);border:1px solid var(--line);border-radius:3px;padding:10px;text-align:center;}
+  .stat-box .v{font-size:14px;font-weight:800;color:var(--text);}
+  .stat-box .l{font-size:9px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;}
+
+  @media (max-width:920px){
+    body{overflow:auto;}
+    .app-shell{height:auto;min-height:100vh;grid-template-rows:auto 1fr;}
+    header{flex-wrap:wrap;padding:12px;}
+    .main{grid-template-columns:1fr;}
+    aside{max-height:52vh;border-right:0;border-bottom:1px solid var(--line);}
   }
-  .photo-thumb .remove-btn:hover{background:#ef4444;color:#fff;}
 </style>
 </head>
 <body>
+<div class="app-shell">
   <header>
     <div class="brand">
-      <div class="brand-icon">🌿</div>
-      <div class="brand-text">
-        <div class="label">Reserva Natural</div>
-        <h1>Editor de Rutas y Transectos</h1>
+      <div class="brand-mark"><i class="fa-solid fa-pen-to-square"></i></div>
+      <div>
+        <p>Reserva Natural</p>
+        <h1>Editor de Rutas y Puntos</h1>
       </div>
     </div>
     <div class="stats">
-      <div class="stat"><div class="num" id="statTotal">0</div><div class="cap">Elementos</div></div>
-      <div class="stat"><div class="num" id="statVisible">0</div><div class="cap">Editables</div></div>
-      <div class="stat"><div class="num" id="statPhotos">0</div><div class="cap">Fotos</div></div>
+      <div class="stat"><span class="stat-value" id="statTrails">0</span><span class="stat-label">Senderos</span></div>
+      <div class="stat"><span class="stat-value" id="statPoints">0</span><span class="stat-label">Puntos</span></div>
+      <div class="stat"><span class="stat-value" id="statPhotos">0</span><span class="stat-label">Fotos</span></div>
     </div>
-    <div class="editor-tag">✏ Editor</div>
+    <a href="./index.html" class="map-link"><i class="fa-solid fa-map"></i> Ver mapa</a>
   </header>
 
-  <main>
+  <main class="main">
     <aside>
       <div class="side-top">
         <button id="autoLoadBtn">Cargar rutas-reserva.geojson</button>
         <label class="file-label" for="fileInput">Cargar archivo manual</label>
         <input id="fileInput" type="file" accept=".geojson,.json">
         <button id="downloadBtn" disabled>Descargar actualizado</button>
-        <input class="search" id="searchInput" placeholder="Buscar ruta o punto...">
+      </div>
+
+      <div class="search-row">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input id="searchInput" type="search" placeholder="Buscar ruta o punto..." autocomplete="off">
       </div>
 
       <div id="status" class="status">Esperando archivo...</div>
       <div id="error" class="error"></div>
       <div id="success" class="success"></div>
 
-      <div class="list-header">Senderos</div>
-      <div id="list"></div>
+      <div class="tabs">
+        <button class="tab active" id="tabTrails">Senderos</button>
+        <button class="tab" id="tabPoints">Puntos</button>
+      </div>
+
+      <div id="list" class="feature-list"></div>
     </aside>
 
     <section id="editor">
       <h2>Carga el GeoJSON para empezar</h2>
-      <p>Usa el botón automático o carga manualmente el archivo <strong>rutas-reserva.geojson</strong>.</p>
+      <p class="hint">Usa el botón automático o carga manualmente el archivo <strong>rutas-reserva.geojson</strong>. Luego selecciona un sendero o un punto (cámaras trampa, miradores, etc.) para editarlo.</p>
     </section>
   </main>
+</div>
 
-  <script>
-    let geojson = null;
-    let selectedIndex = null;
-    let searchTerm = "";
-    let currentPhotos = [];
+<script>
+  let geojson = null;
+  let currentTab = "trails";
+  let selectedIndex = null;
+  let searchTerm = "";
+  let currentPhotos = [];
+  let pointMapInstance = null;
+  let pointMarker = null;
 
-    const autoLoadBtn = document.getElementById("autoLoadBtn");
-    const fileInput = document.getElementById("fileInput");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const statusBox = document.getElementById("status");
-    const errorBox = document.getElementById("error");
-    const successBox = document.getElementById("success");
-    const listBox = document.getElementById("list");
-    const editorBox = document.getElementById("editor");
-    const searchInput = document.getElementById("searchInput");
+  const autoLoadBtn = document.getElementById("autoLoadBtn");
+  const fileInput = document.getElementById("fileInput");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const statusBox = document.getElementById("status");
+  const errorBox = document.getElementById("error");
+  const successBox = document.getElementById("success");
+  const listBox = document.getElementById("list");
+  const editorBox = document.getElementById("editor");
+  const searchInput = document.getElementById("searchInput");
+  const tabTrails = document.getElementById("tabTrails");
+  const tabPoints = document.getElementById("tabPoints");
 
-    const statTotal = document.getElementById("statTotal");
-    const statVisible = document.getElementById("statVisible");
-    const statPhotos = document.getElementById("statPhotos");
+  const statTrails = document.getElementById("statTrails");
+  const statPoints = document.getElementById("statPoints");
+  const statPhotos = document.getElementById("statPhotos");
 
-    const BADGE_COLORS = ["#22c55e", "#8b5cf6", "#06b6d4", "#3b82f6", "#f59e0b"];
+  const POINT_PRESETS = {
+    camera: { label: "Cámara trampa", color: "#ef4444", icon: "red-pin-down.png" },
+    wildlife: { label: "Avistamiento / fauna", color: "#f97316", icon: "red-pin-down.png" },
+    landmark: { label: "Mirador / punto de interés", color: "#06b6d4", icon: "red-pin-down.png" },
+    infrastructure: { label: "Infraestructura", color: "#8b5cf6", icon: "red-pin-down.png" }
+  };
 
-    function showError(message) {
-      errorBox.style.display = "block";
-      successBox.style.display = "none";
-      errorBox.textContent = message;
+  function showError(message) {
+    errorBox.style.display = "block";
+    successBox.style.display = "none";
+    errorBox.textContent = message;
+  }
+
+  function showSuccess(message) {
+    successBox.style.display = "block";
+    errorBox.style.display = "none";
+    successBox.textContent = message;
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<​", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function getTitle(props) {
+    return props.title || props.name || props.id || "Sin nombre";
+  }
+
+  function isTrailGeometry(geometry) {
+    return geometry && (geometry.type === "LineString" || geometry.type === "MultiLineString");
+  }
+
+  function isPointGeometry(geometry) {
+    return geometry && geometry.type === "Point";
+  }
+
+  function getPhotoCount(feature) {
+    const p = feature.properties || {};
+    return Array.isArray(p.photos) ? p.photos.length : 0;
+  }
+
+  function updateStats() {
+    if (!geojson) {
+      statTrails.textContent = "0";
+      statPoints.textContent = "0";
+      statPhotos.textContent = "0";
+      return;
+    }
+    const trails = geojson.features.filter(f => isTrailGeometry(f.geometry) && f.properties.deleted !== true);
+    const points = geojson.features.filter(f => isPointGeometry(f.geometry) && f.properties.deleted !== true);
+    const totalPhotos = geojson.features.reduce((sum, f) => sum + getPhotoCount(f), 0);
+
+    statTrails.textContent = trails.length;
+    statPoints.textContent = points.length;
+    statPhotos.textContent = totalPhotos;
+  }
+
+  function loadGeoJSON(data) {
+    if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
+      showError("El archivo no parece ser un GeoJSON FeatureCollection válido.");
+      return;
     }
 
-    function showSuccess(message) {
-      successBox.style.display = "block";
-      errorBox.style.display = "none";
-      successBox.textContent = message;
+    geojson = data;
+    selectedIndex = null;
+
+    statusBox.textContent = "GeoJSON cargado. " + data.features.length + " elementos totales.";
+    downloadBtn.disabled = false;
+
+    updateStats();
+    renderList();
+    renderEditor();
+    showSuccess("Archivo cargado correctamente.");
+  }
+
+  function setTab(tab) {
+    currentTab = tab;
+    tabTrails.classList.toggle("active", tab === "trails");
+    tabPoints.classList.toggle("active", tab === "points");
+    selectedIndex = null;
+    renderList();
+    renderEditor();
+  }
+
+  function renderList() {
+    listBox.innerHTML = "";
+    if (!geojson) return;
+
+    const source = geojson.features
+      .map((feature, index) => ({ feature, index }))
+      .filter(({ feature }) => currentTab === "trails" ? isTrailGeometry(feature.geometry) : isPointGeometry(feature.geometry));
+
+    const filtered = source.filter(({ feature }) => {
+      if (!searchTerm) return true;
+      const title = getTitle(feature.properties || {}).toLowerCase();
+      const notes = String((feature.properties || {}).notes || "").toLowerCase();
+      return title.includes(searchTerm) || notes.includes(searchTerm);
+    });
+
+    if (!filtered.length) {
+      listBox.innerHTML = '<div class="empty-state">No hay elementos que coincidan.</div>';
+      return;
     }
 
-    function getTitle(feature) {
-      const p = feature.properties || {};
-      return p.title || p.name || p.Name || feature.id || "Sin nombre";
-    }
+    filtered
+      .sort((a, b) => {
+        const aDel = a.feature.properties.deleted === true ? 1 : 0;
+        const bDel = b.feature.properties.deleted === true ? 1 : 0;
+        return aDel - bDel;
+      })
+      .forEach(({ feature, index }) => {
+        const props = feature.properties || {};
+        const title = getTitle(props);
+        const deleted = props.deleted === true;
 
-    function getDescription(feature) {
-      const p = feature.properties || {};
-      return p.description || p.notes || p.desc || "";
-    }
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "feature-row" + (index === selectedIndex ? " active" : "") + (deleted ? " deleted-item" : "");
 
-    function isCamera(feature) {
-      const p = feature.properties || {};
-      const text = JSON.stringify(p).toLowerCase();
-      return text.includes("cámara") || text.includes("camara") || text.includes("camera");
-    }
-
-    function getPhotoCount(feature) {
-      const p = feature.properties || {};
-      return Array.isArray(p.photos) ? p.photos.length : 0;
-    }
-
-    function updateStats() {
-      if (!geojson) {
-        statTotal.textContent = "0";
-        statVisible.textContent = "0";
-        statPhotos.textContent = "0";
-        return;
-      }
-      const editable = geojson.features.filter(f => !isCamera(f));
-      const totalPhotos = geojson.features.reduce((sum, f) => sum + getPhotoCount(f), 0);
-      statTotal.textContent = geojson.features.length;
-      statVisible.textContent = editable.length;
-      statPhotos.textContent = totalPhotos;
-    }
-
-    function loadGeoJSON(data) {
-      if (!data || data.type !== "FeatureCollection" || !Array.isArray(data.features)) {
-        showError("El archivo no parece ser un GeoJSON FeatureCollection válido.");
-        return;
-      }
-
-      geojson = data;
-      selectedIndex = null;
-
-      const editable = geojson.features.filter(feature => !isCamera(feature));
-
-      statusBox.textContent = "GeoJSON cargado. Elementos totales: " + geojson.features.length + ". Elementos visibles/editables: " + editable.length + ".";
-      downloadBtn.disabled = false;
-
-      updateStats();
-      renderList();
-      showSuccess("Archivo cargado correctamente.");
-    }
-
-    function renderList() {
-      listBox.innerHTML = "";
-
-      if (!geojson) return;
-
-      geojson.features.forEach((feature, index) => {
-        if (isCamera(feature)) return;
-
-        const title = getTitle(feature);
-        if (searchTerm && !title.toLowerCase().includes(searchTerm)) return;
-
-        const item = document.createElement("div");
-        item.className = "item" + (index === selectedIndex ? " active" : "");
-
-        const badge = document.createElement("div");
-        badge.className = "badge";
-        badge.style.background = BADGE_COLORS[index % BADGE_COLORS.length];
-        badge.textContent = "⛰";
-
-        const info = document.createElement("div");
-        info.className = "item-info";
-        const titleEl = document.createElement("div");
-        titleEl.className = "title";
-        titleEl.textContent = title;
-        const metaEl = document.createElement("div");
-        metaEl.className = "meta";
+        const color = currentTab === "trails" ? (props.hexcolor || "#18c964") : (props.marker_color || "#06b6d4");
+        const icon = currentTab === "trails" ? "fa-route" : "fa-location-dot";
         const photoCount = getPhotoCount(feature);
-        metaEl.textContent = "Ruta / Transecto" + (photoCount ? " · " + photoCount + " fotos" : "");
-        info.appendChild(titleEl);
-        info.appendChild(metaEl);
 
-        item.appendChild(badge);
-        item.appendChild(info);
+        row.innerHTML = `
+          <div class="feature-row-title">
+            <span>${escapeHtml(title)}</span>
+            <span class="feature-color" style="background:${escapeHtml(color)}"><i class="fa-solid ${icon}"></i></span>
+          </div>
+          <div class="feature-meta">
+            ${deleted ? '<span>Eliminado</span>' : ''}
+            ${photoCount ? '<span><i class="fa-regular fa-image"></i> ' + photoCount + ' fotos</span>' : ''}
+          </div>
+        `;
 
-        item.addEventListener("click", function () {
+        row.addEventListener("click", function () {
           selectedIndex = index;
           renderList();
           renderEditor();
         });
 
-        listBox.appendChild(item);
+        listBox.appendChild(row);
       });
+  }
+
+  function getPhotosArray(properties) {
+    if (!Array.isArray(properties.photos)) return [];
+    return properties.photos.map(photo => {
+      if (typeof photo === "string") return { title: "", web_url: photo, url: photo };
+      return { ...photo };
+    }).filter(photo => photo.web_url || photo.url || photo.scaled_url);
+  }
+
+  function renderEditor() {
+    if (!geojson) {
+      editorBox.innerHTML = '<h2>Carga el GeoJSON para empezar</h2><p class="hint">Usa el botón automático o carga manualmente el archivo <strong>rutas-reserva.geojson</strong>.</p>';
+      return;
     }
 
-    // currentPhotos: array de objetos {title, web_url, url, scaled_url?}
-    function getPhotosArray(properties) {
-      if (!Array.isArray(properties.photos)) return [];
-      return properties.photos.map(photo => {
-        if (typeof photo === "string") {
-          return { title: "", web_url: photo, url: photo };
-        }
-        return { ...photo };
-      }).filter(photo => photo.web_url || photo.url || photo.scaled_url);
+    if (currentTab === "points" && selectedIndex === null) {
+      editorBox.innerHTML = `
+        <h2>Puntos de interés</h2>
+        <p class="hint">Selecciona un punto de la lista para editarlo, o agrega uno nuevo (cámara trampa, mirador, avistamiento, etc.).</p>
+        <button id="addPointBtn" class="secondary" style="max-width:260px;">+ Agregar punto nuevo</button>
+      `;
+      document.getElementById("addPointBtn").addEventListener("click", addNewPoint);
+      return;
     }
 
-    function renderEditor() {
-      if (selectedIndex === null || !geojson) {
-        editorBox.innerHTML = "<h2>Selecciona un elemento</h2>";
-        return;
+    if (selectedIndex === null) {
+      editorBox.innerHTML = "<h2>Selecciona un elemento</h2>";
+      return;
+    }
+
+    const feature = geojson.features[selectedIndex];
+    if (isTrailGeometry(feature.geometry)) {
+      renderTrailEditor(feature);
+    } else {
+      renderPointEditor(feature);
+    }
+  }
+
+  function renderTrailEditor(feature) {
+    const p = feature.properties || {};
+    currentPhotos = getPhotosArray(p);
+    const deleted = p.deleted === true;
+
+    editorBox.innerHTML = `
+      <h2>Editar sendero</h2>
+      <div class="badge-row">
+        <span class="badge trail">Sendero</span>
+        <span class="badge ${deleted ? 'deleted' : 'active'}">${deleted ? 'Eliminado' : 'Activo'}</span>
+      </div>
+
+      <div class="stat-box">
+        <div><div class="v">${p.distance ? (p.distance / 1000).toFixed(2) + ' km' : '—'}</div><div class="l">Distancia</div></div>
+        <div><div class="v">${p.total_ascent ? Math.round(p.total_ascent) + ' m' : '—'}</div><div class="l">Ascenso</div></div>
+        <div><div class="v">${p.moving_time ? Math.round(p.moving_time / 60) + ' min' : '—'}</div><div class="l">Tiempo en mov.</div></div>
+      </div>
+
+      <label class="field-label">Título</label>
+      <input class="field" id="titleInput" value="${escapeHtml(getTitle(p))}">
+
+      <div class="row2">
+        <div>
+          <label class="field-label">Color (hex)</label>
+          <input class="field" id="colorInput" type="text" value="${escapeHtml(p.hexcolor || '#18c964')}">
+        </div>
+        <div>
+          <label class="field-label">Color</label>
+          <input class="field" id="colorPicker" type="color" value="${escapeHtml(p.hexcolor || '#18c964')}" style="padding:4px;height:40px;">
+        </div>
+      </div>
+
+      <label class="field-label">Notas</label>
+      <textarea class="field" id="notesInput">${escapeHtml(p.notes || "")}</textarea>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="deletedInput" ${deleted ? "checked" : ""}>
+        <label for="deletedInput">Marcar como eliminado (se oculta del mapa)</label>
+      </div>
+
+      <label class="field-label">Fotos del sendero</label>
+      <div class="upload-row">
+        <label class="file-label upload-label" for="photoUploadInput">Subir fotos desde el dispositivo</label>
+        <input id="photoUploadInput" type="file" accept="image/*" multiple>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+
+      <label class="field-label">O agrega URLs de fotos, una por línea</label>
+      <textarea class="field" id="photosInput" placeholder="https://ejemplo.com/foto.jpg"></textarea>
+
+      <div class="save-row">
+        <button id="saveBtn">Aplicar cambios</button>
+      </div>
+    `;
+
+    renderPhotoGrid();
+
+    document.getElementById("colorPicker").addEventListener("input", function (e) {
+      document.getElementById("colorInput").value = e.target.value;
+    });
+
+    document.getElementById("photoUploadInput").addEventListener("change", function (e) {
+      const files = Array.from(e.target.files || []);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function () {
+          currentPhotos.push({ title: file.name, web_url: reader.result, url: reader.result });
+          renderPhotoGrid();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = "";
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", function () {
+      const title = document.getElementById("titleInput").value;
+      const notes = document.getElementById("notesInput").value;
+      const color = document.getElementById("colorInput").value.trim();
+      const photosText = document.getElementById("photosInput").value;
+      const isDeleted = document.getElementById("deletedInput").checked;
+
+      p.title = title;
+      p.name = title;
+      p.notes = notes;
+      if (color) {
+        p.hexcolor = color;
+        feature.style = feature.style || {};
+        feature.style.stroke = color;
+      }
+      p.deleted = isDeleted;
+
+      const urlPhotos = photosText
+        .split("\n")
+        .map(url => url.trim())
+        .filter(url => url.length > 0)
+        .map(url => ({ title: title, web_url: url, url: url }));
+
+      p.photos = [...currentPhotos, ...urlPhotos];
+
+      updateStats();
+      renderList();
+      renderEditor();
+      showSuccess("Cambios aplicados al sendero. Ya puedes descargar el GeoJSON actualizado.");
+    });
+  }
+
+  function renderPointEditor(feature) {
+    const p = feature.properties || {};
+    const coords = feature.geometry.coordinates || [-78.8452, 0.1523];
+    const lng = Number(coords[0]);
+    const lat = Number(coords[1]);
+    currentPhotos = getPhotosArray(p);
+    const deleted = p.deleted === true;
+
+    const presetOptions = Object.keys(POINT_PRESETS).map(key =>
+      `<option value="${key}">${POINT_PRESETS[key].label}</option>`
+    ).join("");
+
+    editorBox.innerHTML = `
+      <h2>Editar punto</h2>
+      <div class="badge-row">
+        <span class="badge point">Punto de interés</span>
+        <span class="badge ${deleted ? 'deleted' : 'active'}">${deleted ? 'Eliminado' : 'Activo'}</span>
+      </div>
+
+      <label class="field-label">Título</label>
+      <input class="field" id="titleInput" value="${escapeHtml(getTitle(p))}">
+
+      <div class="row2">
+        <div>
+          <label class="field-label">Tipo (preajuste visual)</label>
+          <select class="field" id="presetInput">
+            <option value="">— Personalizado —</option>
+            ${presetOptions}
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Color del marcador</label>
+          <input class="field" id="colorInput" type="color" value="${escapeHtml(p.marker_color || '#06b6d4')}" style="padding:4px;height:40px;">
+        </div>
+      </div>
+
+      <label class="field-label">Notas</label>
+      <textarea class="field" id="notesInput">${escapeHtml(p.notes || "")}</textarea>
+
+      <label class="field-label">Ubicación (arrastra el marcador o haz clic en el mapa)</label>
+      <div id="pointMap"></div>
+
+      <div class="row2">
+        <div>
+          <label class="field-label">Latitud</label>
+          <input class="field" id="latInput" type="number" step="0.000001" value="${lat}">
+        </div>
+        <div>
+          <label class="field-label">Longitud</label>
+          <input class="field" id="lngInput" type="number" step="0.000001" value="${lng}">
+        </div>
+      </div>
+
+      <label class="field-label">Elevación (m)</label>
+      <input class="field" id="elevationInput" type="number" value="${p.elevation !== null && p.elevation !== undefined ? p.elevation : ''}">
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="deletedInput" ${deleted ? "checked" : ""}>
+        <label for="deletedInput">Marcar como eliminado (se oculta del mapa)</label>
+      </div>
+
+      <label class="field-label">Fotos del punto</label>
+      <div class="upload-row">
+        <label class="file-label upload-label" for="photoUploadInput">Subir fotos desde el dispositivo</label>
+        <input id="photoUploadInput" type="file" accept="image/*" multiple>
+      </div>
+      <div class="photo-grid" id="photoGrid"></div>
+
+      <label class="field-label">O agrega URLs de fotos, una por línea</label>
+      <textarea class="field" id="photosInput" placeholder="https://ejemplo.com/foto.jpg"></textarea>
+
+      <div class="save-row">
+        <button id="saveBtn">Aplicar cambios</button>
+        <button id="deleteBtn" class="danger" style="max-width:200px;">Eliminar punto</button>
+      </div>
+    `;
+
+    renderPhotoGrid();
+    setupPointMap(lat, lng);
+
+    document.getElementById("presetInput").addEventListener("change", function (e) {
+      const preset = POINT_PRESETS[e.target.value];
+      if (preset) {
+        document.getElementById("colorInput").value = preset.color;
+      }
+    });
+
+    document.getElementById("latInput").addEventListener("change", function () {
+      updateMarkerFromInputs();
+    });
+    document.getElementById("lngInput").addEventListener("change", function () {
+      updateMarkerFromInputs();
+    });
+
+    document.getElementById("photoUploadInput").addEventListener("change", function (e) {
+      const files = Array.from(e.target.files || []);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function () {
+          currentPhotos.push({ title: file.name, web_url: reader.result, url: reader.result });
+          renderPhotoGrid();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = "";
+    });
+
+    document.getElementById("deleteBtn").addEventListener("click", function () {
+      p.deleted = true;
+      updateStats();
+      renderList();
+      renderEditor();
+      showSuccess("Punto marcado como eliminado (oculto del mapa).");
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", function () {
+      const title = document.getElementById("titleInput").value;
+      const notes = document.getElementById("notesInput").value;
+      const color = document.getElementById("colorInput").value;
+      const newLat = parseFloat(document.getElementById("latInput").value);
+      const newLng = parseFloat(document.getElementById("lngInput").value);
+      const elevationRaw = document.getElementById("elevationInput").value;
+      const isDeleted = document.getElementById("deletedInput").checked;
+      const photosText = document.getElementById("photosInput").value;
+
+      p.title = title;
+      p.name = title;
+      p.notes = notes;
+      p.marker_color = color;
+      p.deleted = isDeleted;
+      p.elevation = elevationRaw === "" ? null : Number(elevationRaw);
+
+      if (Number.isFinite(newLat) && Number.isFinite(newLng)) {
+        feature.geometry.coordinates = [newLng, newLat];
+        p.latitude = newLat;
+        p.longitude = newLng;
       }
 
-      const feature = geojson.features[selectedIndex];
-      const p = feature.properties || {};
-      feature.properties = p;
+      const urlPhotos = photosText
+        .split("\n")
+        .map(url => url.trim())
+        .filter(url => url.length > 0)
+        .map(url => ({ title: title, web_url: url, url: url }));
 
-      currentPhotos = getPhotosArray(p);
+      p.photos = [...currentPhotos, ...urlPhotos];
 
-      editorBox.innerHTML = `
-        <h2>Editar elemento</h2>
+      updateStats();
+      renderList();
+      renderEditor();
+      showSuccess("Cambios aplicados al punto. Ya puedes descargar el GeoJSON actualizado.");
+    });
+  }
 
-        <label class="field-label">Título</label>
-        <input class="field" id="titleInput" value="${escapeHtml(getTitle(feature))}">
-
-        <label class="field-label">Descripción</label>
-        <textarea class="field" id="descriptionInput">${escapeHtml(getDescription(feature))}</textarea>
-
-        <label class="field-label">Fotos</label>
-        <div class="upload-row">
-          <label class="file-label upload-label" for="photoUploadInput">Subir fotos desde el dispositivo</label>
-          <input id="photoUploadInput" type="file" accept="image/*" multiple>
-        </div>
-        <div class="photo-grid" id="photoGrid"></div>
-
-        <label class="field-label">O agrega URLs de fotos, una por línea</label>
-        <textarea class="field" id="photosInput" placeholder="https://ejemplo.com/foto.jpg"></textarea>
-
-        <button class="save-btn" id="saveBtn">Aplicar cambios</button>
-      `;
-
-      renderPhotoGrid();
-
-      document.getElementById("photoUploadInput").addEventListener("change", function (e) {
-        const files = Array.from(e.target.files || []);
-        if (!files.length) return;
-
-        let pending = files.length;
-        files.forEach(file => {
-          const reader = new FileReader();
-          reader.onload = function () {
-            currentPhotos.push({
-              title: file.name,
-              web_url: reader.result,
-              url: reader.result
-            });
-            pending -= 1;
-            if (pending === 0) {
-              renderPhotoGrid();
-            }
-          };
-          reader.onerror = function () {
-            showError("No se pudo leer la imagen: " + file.name);
-            pending -= 1;
-          };
-          reader.readAsDataURL(file);
-        });
-
-        e.target.value = "";
-      });
-
-      document.getElementById("saveBtn").addEventListener("click", function () {
-        const title = document.getElementById("titleInput").value;
-        const description = document.getElementById("descriptionInput").value;
-        const photosText = document.getElementById("photosInput").value;
-
-        p.title = title;
-        p.name = title;
-        p.description = description;
-        p.notes = description;
-        if (p.desc !== undefined) p.desc = description;
-
-        const urlPhotos = photosText
-          .split("\n")
-          .map(url => url.trim())
-          .filter(url => url.length > 0)
-          .map(url => ({ title: title, web_url: url, url: url }));
-
-        const uploadedPhotos = currentPhotos.map(photo => ({
-          ...photo,
-          title: photo.title || title
-        }));
-
-        p.photos = [...uploadedPhotos, ...urlPhotos];
-
-        updateStats();
-        renderList();
-        showSuccess("Cambios aplicados. Ahora puedes descargar el GeoJSON actualizado.");
-        renderEditor();
-      });
+  function setupPointMap(lat, lng) {
+    if (pointMapInstance) {
+      pointMapInstance.remove();
+      pointMapInstance = null;
     }
 
-    function renderPhotoGrid() {
-      const grid = document.getElementById("photoGrid");
-      if (!grid) return;
-      grid.innerHTML = "";
+    pointMapInstance = L.map("pointMap", { zoomControl: true }).setView([lat, lng], 17);
 
-      currentPhotos.forEach((photo, i) => {
-        const src = photo.web_url || photo.url || photo.scaled_url || "";
-        const thumb = document.createElement("div");
-        thumb.className = "photo-thumb";
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19,
+      attribution: "Tiles &copy; Esri"
+    }).addTo(pointMapInstance);
 
-        const img = document.createElement("img");
-        img.src = src;
-        img.alt = photo.title || "foto";
+    pointMarker = L.marker([lat, lng], { draggable: true }).addTo(pointMapInstance);
 
-        const removeBtn = document.createElement("div");
-        removeBtn.className = "remove-btn";
-        removeBtn.textContent = "×";
-        removeBtn.addEventListener("click", function () {
-          currentPhotos.splice(i, 1);
-          renderPhotoGrid();
-        });
+    pointMarker.on("dragend", function () {
+      const pos = pointMarker.getLatLng();
+      document.getElementById("latInput").value = pos.lat.toFixed(6);
+      document.getElementById("lngInput").value = pos.lng.toFixed(6);
+    });
 
-        thumb.appendChild(img);
-        thumb.appendChild(removeBtn);
-        grid.appendChild(thumb);
+    pointMapInstance.on("click", function (e) {
+      pointMarker.setLatLng(e.latlng);
+      document.getElementById("latInput").value = e.latlng.lat.toFixed(6);
+      document.getElementById("lngInput").value = e.latlng.lng.toFixed(6);
+    });
+
+    setTimeout(() => pointMapInstance.invalidateSize(), 100);
+  }
+
+  function updateMarkerFromInputs() {
+    const lat = parseFloat(document.getElementById("latInput").value);
+    const lng = parseFloat(document.getElementById("lngInput").value);
+    if (Number.isFinite(lat) && Number.isFinite(lng) && pointMarker) {
+      pointMarker.setLatLng([lat, lng]);
+      pointMapInstance.setView([lat, lng]);
+    }
+  }
+
+  function renderPhotoGrid() {
+    const grid = document.getElementById("photoGrid");
+    if (!grid) return;
+    grid.innerHTML = "";
+
+    currentPhotos.forEach((photo, i) => {
+      const src = photo.web_url || photo.url || photo.scaled_url || photo.thumbnail_url || "";
+      const thumb = document.createElement("div");
+      thumb.className = "photo-thumb";
+
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = photo.title || "foto";
+
+      const removeBtn = document.createElement("div");
+      removeBtn.className = "remove-btn";
+      removeBtn.textContent = "×";
+      removeBtn.addEventListener("click", function () {
+        currentPhotos.splice(i, 1);
+        renderPhotoGrid();
       });
-    }
 
-    function escapeHtml(value) {
-      return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<​", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
+      thumb.appendChild(img);
+      thumb.appendChild(removeBtn);
+      grid.appendChild(thumb);
+    });
+  }
 
-    autoLoadBtn.addEventListener("click", async function () {
+  function addNewPoint() {
+    if (!geojson) return;
+
+    const newId = "point-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    const now = new Date().toISOString();
+
+    const newFeature = {
+      type: "Feature",
+      id: newId,
+      geometry: { type: "Point", coordinates: [-78.8452, 0.1523] },
+      properties: {
+        id: newId,
+        updated_date: now,
+        time_created: now,
+        deleted: false,
+        title: "Nuevo punto",
+        public: false,
+        is_active: true,
+        icon: "red-pin-down.png",
+        revision: 1,
+        notes: "",
+        latitude: 0.1523,
+        longitude: -78.8452,
+        elevation: null,
+        attr: null,
+        track_id: "",
+        order: null,
+        folder: (geojson.properties && geojson.properties.id) || "",
+        marker_type: "pin",
+        marker_color: "#06b6d4",
+        marker_decoration: null,
+        sync_to_mobile: null,
+        cover_photo_id: null,
+        photos: []
+      }
+    };
+
+    geojson.features.push(newFeature);
+    selectedIndex = geojson.features.length - 1;
+
+    updateStats();
+    renderList();
+    renderEditor();
+    showSuccess("Punto nuevo creado. Ajusta su ubicación y datos, luego aplica cambios.");
+  }
+
+  autoLoadBtn.addEventListener("click", async function () {
+    try {
+      statusBox.textContent = "Intentando cargar rutas-reserva.geojson...";
+      const response = await fetch("./rutas-reserva.geojson?nocache=" + Date.now());
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      loadGeoJSON(data);
+    } catch (error) {
+      showError("No se pudo cargar automáticamente. Prueba con carga manual. Error: " + error.message);
+    }
+  });
+
+  fileInput.addEventListener("change", function () {
+    const file = fileInput.files[0];
+    if (!file) {
+      showError("No seleccionaste ningún archivo.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function () {
       try {
-        statusBox.textContent = "Intentando cargar rutas-reserva.geojson...";
-        const response = await fetch("./rutas-reserva.geojson?nocache=" + Date.now());
-
-        if (!response.ok) {
-          throw new Error("HTTP " + response.status);
-        }
-
-        const data = await response.json();
+        const data = JSON.parse(reader.result);
         loadGeoJSON(data);
       } catch (error) {
-        showError("No se pudo cargar automáticamente. Prueba con carga manual. Error: " + error.message);
+        showError("No se pudo leer el archivo. Error: " + error.message);
       }
-    });
+    };
+    reader.onerror = function () {
+      showError("Error leyendo el archivo.");
+    };
+    reader.readAsText(file);
+  });
 
-    fileInput.addEventListener("change", function () {
-      const file = fileInput.files[0];
+  searchInput.addEventListener("input", function () {
+    searchTerm = searchInput.value.trim().toLowerCase();
+    renderList();
+  });
 
-      if (!file) {
-        showError("No seleccionaste ningún archivo.");
-        return;
-      }
+  tabTrails.addEventListener("click", function () { setTab("trails"); });
+  tabPoints.addEventListener("click", function () { setTab("points"); });
 
-      const reader = new FileReader();
-
-      reader.onload = function () {
-        try {
-          const data = JSON.parse(reader.result);
-          loadGeoJSON(data);
-        } catch (error) {
-          showError("No se pudo leer el archivo. Error: " + error.message);
-        }
-      };
-
-      reader.onerror = function () {
-        showError("Error leyendo el archivo.");
-      };
-
-      reader.readAsText(file);
-    });
-
-    searchInput.addEventListener("input", function () {
-      searchTerm = searchInput.value.trim().toLowerCase();
-      renderList();
-    });
-
-    downloadBtn.addEventListener("click", function () {
-      if (!geojson) {
-        showError("Primero carga un GeoJSON.");
-        return;
-      }
-
-      const text = JSON.stringify(geojson, null, 2);
-      const blob = new Blob([text], { type: "application/geo+json" });
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "rutas-reserva.geojson";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      URL.revokeObjectURL(url);
-
-      showSuccess("Archivo descargado como rutas-reserva.geojson.");
-    });
-  </script>
+  downloadBtn.addEventListener("click", function () {
+    if (!geojson) {
+      showError("Primero carga un GeoJSON.");
+      return;
+    }
+    const text = JSON.stringify(geojson, null, 2);
+    const blob = new Blob([text], { type: "application/geo+json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "rutas-reserva.geojson";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showSuccess("Archivo descargado como rutas-reserva.geojson.");
+  });
+</script>
 </body>
 </html>
